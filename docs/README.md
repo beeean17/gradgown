@@ -2,6 +2,8 @@
 
 데이터베이스 과목 텀 프로젝트 문서다. 운영 중인 grad42(Firebase)를 MySQL 기반으로 옮기는 과제용 구현을 다룬다.
 
+작업 규칙(지킬 것, 결정을 다루는 방법, 커밋 방식)은 저장소 루트의 [AGENTS.md](../AGENTS.md)에 있다.
+
 | 폴더 | 내용 |
 |---|---|
 | [requirements/](./requirements/) | [과제 요구사항](./requirements/course-requirements.md)과 [보고서 요구사항·충족 현황](./requirements/report-requirements.md) |
