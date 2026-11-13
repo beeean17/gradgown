@@ -7,6 +7,7 @@
 | [course-materials/](./course-materials/) | 과제 안내 슬라이드 PDF 원본 4개 |
 | [requirements/](./requirements/) | 과제 요구사항 분석 |
 | [decisions/](./decisions/) | 결정 기록. 결정 하나에 문서 하나 |
+| [contracts/](./contracts/) | 웹과 서버 사이의 계약. [web-api.md](./contracts/web-api.md)는 초안이다 |
 
 ## 결정 기록
 
@@ -32,6 +33,7 @@
 | 관리자 기능을 어디까지 넣을지 (설정 저장, 공지·FAQ 작성, 명단 내보내기) | [scope.md](./decisions/scope.md) |
 | 테스터 권한을 넣을지 | [scope.md](./decisions/scope.md), [data-model.md](./decisions/data-model.md) |
 | 테스트 로그인의 구체적인 방식 | [test-login.md](./decisions/test-login.md) |
+| API 응답 모양, 쓰기 경로의 형태, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
 | 과제 쪽 미확인 사항 (제출 기한, 배점, 개인/팀, 제출 형식, 보고서 언어) | [requirements/course-requirements.md](./requirements/course-requirements.md) |
 
 ## 원본 서비스
