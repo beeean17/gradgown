@@ -24,6 +24,7 @@
 | Google 로그인 대신 테스트 계정으로 로그인한다 | 확정 | [test-login.md](./decisions/test-login.md) |
 | 학생용과 관리자용 서버를 나눈다 | 확정 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다 | 확정 (권한 표는 초안) | [db-privileges.md](./decisions/db-privileges.md) |
+| CI는 GitHub Actions로 돌린다 | 확정 (작업 구성은 제안) | [ci.md](./decisions/ci.md) |
 | Firestore 구조를 테이블 11개로 옮긴다 | 초안 | [data-model.md](./decisions/data-model.md) |
 | 평가는 DB 수준 비교를 중심으로 한다 | 제안 | [evaluation.md](./decisions/evaluation.md) |
 
@@ -39,7 +40,8 @@
 | API 응답 모양, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
 | 관리자용 서버가 조회 계정과 마스터 계정을 골라 쓰는 방식, 두 서버의 공용 코드, 포트 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | MySQL role을 쓸지, 테이블을 만드는 계정을 따로 둘지 | [db-privileges.md](./decisions/db-privileges.md) |
-| 정적 검사 도구, 테스트용 DB를 띄우고 되돌리는 방법, 브라우저 테스트 자동화, 자동 실행(CI) | [testing/README.md](./testing/README.md) |
+| 정적 검사 도구, 테스트용 DB를 띄우고 되돌리는 방법, 브라우저 테스트 자동화 | [testing/README.md](./testing/README.md) |
+| CI를 언제 돌릴지, 실패한 채 병합되는 것을 막을지 | [ci.md](./decisions/ci.md) |
 | 과제 쪽 미확인 사항 (제출 기한, 배점, 개인/팀, 제출 형식, 보고서 언어) | [requirements/course-requirements.md](./requirements/course-requirements.md) |
 
 ## 원본 서비스

@@ -10,6 +10,8 @@
 | 정적 | 코드를 실행하지 않고 검사한다 | 소스만 있으면 된다. DB가 없어도 돈다 | [static.md](./static.md) |
 | 동적 | 실제로 실행해서 결과를 본다 | MySQL이 떠 있어야 한다 | [dynamic.md](./dynamic.md) |
 
+두 계열 모두 로컬에서 돌릴 수 있고, GitHub Actions에서도 자동으로 돈다([ci.md](../decisions/ci.md)).
+
 ## 원칙
 
 1. **DB에 닿는 테스트는 실제 MySQL에서 돌린다.** 생성 컬럼, `CHECK`, 복합 FK, `GRANT`, 뷰가 이 프로젝트의 핵심인데 H2 같은 대체 DB는 이것들을 MySQL과 똑같이 처리하지 않는다.
@@ -54,4 +56,4 @@ grad42에는 같은 규칙을 검사하는 테스트가 이미 있다. 테스트
 | 테스트용 MySQL을 어떻게 띄울지 | 동적 계열 전체. [local-only.md](../decisions/local-only.md)의 미정 항목과 같다 |
 | 서버의 정적 검사 도구 | [static.md](./static.md) |
 | 브라우저 테스트를 자동화할지 | [dynamic.md](./dynamic.md) |
-| 자동 실행(CI)을 둘지 | 저장소가 GitHub에 있어 GitHub Actions를 쓸 수 있다. 두지 않으면 커밋 전에 손으로 돌린다 |
+| CI를 언제 돌리고 어디까지 넣을지 | [ci.md](../decisions/ci.md) |
