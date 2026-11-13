@@ -51,5 +51,6 @@ The documents under `docs/` are written in Korean.
 - Documentation work is committed on the `docs` branch and merged into `main` when the writing is done.
 - Code work is done on a feature branch (for example `feat/schema`) and merged into `main`.
 - Push only when asked.
-- Commit messages are a prefix plus one Korean sentence, for example `docs: 테스트 계획을 추가한다`.
+- Commit messages are written in English: a conventional prefix plus an imperative summary, for example `docs: add the test plan`. Add a body when the reason is not obvious from the summary.
+- Do not add AI attribution to commit messages. No `Co-Authored-By` trailer and no session link.
 - Once code exists, run the static checks before committing (`docs/testing/static.md`).
