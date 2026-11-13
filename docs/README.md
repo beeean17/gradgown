@@ -8,6 +8,7 @@
 | [requirements/](./requirements/) | 과제 요구사항 분석 |
 | [decisions/](./decisions/) | 결정 기록. 결정 하나에 문서 하나 |
 | [contracts/](./contracts/) | 웹과 서버 사이의 계약. [web-api.md](./contracts/web-api.md)는 초안이다 |
+| [testing/](./testing/) | 테스트 계획. [개요](./testing/README.md), [정적 계열](./testing/static.md), [동적 계열](./testing/dynamic.md). 모두 제안이다 |
 
 ## 결정 기록
 
@@ -38,6 +39,7 @@
 | API 응답 모양, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
 | 관리자용 서버가 조회 계정과 마스터 계정을 골라 쓰는 방식, 두 서버의 공용 코드, 포트 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | MySQL role을 쓸지, 테이블을 만드는 계정을 따로 둘지 | [db-privileges.md](./decisions/db-privileges.md) |
+| 정적 검사 도구, 테스트용 DB를 띄우고 되돌리는 방법, 브라우저 테스트 자동화, 자동 실행(CI) | [testing/README.md](./testing/README.md) |
 | 과제 쪽 미확인 사항 (제출 기한, 배점, 개인/팀, 제출 형식, 보고서 언어) | [requirements/course-requirements.md](./requirements/course-requirements.md) |
 
 ## 원본 서비스
