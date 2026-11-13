@@ -1,7 +1,7 @@
 # 평가는 DB 수준 비교를 중심으로 한다
 
 - 상태: 제안 (2026-11-13). 아직 확정하지 않았다
-- 관련: [topic.md](./topic.md), [local-only.md](./local-only.md), [data-model.md](./data-model.md), [과제 요구사항](../requirements/course-requirements.md)
+- 관련: [topic.md](./topic.md), [local-only.md](./local-only.md), [data-model.md](./data-model.md), [db-privileges.md](./db-privileges.md), [과제 요구사항](../requirements/course-requirements.md)
 
 ## 제안
 
@@ -38,7 +38,16 @@ grad42 `feat/spring-migration` 브랜치의 `docs/migration/04-api.md`가 현행
 - 같은 `operation_id`로 두 번 요청하면 한 번만 처리되는 것
 - 동시에 같은 예약을 고치면 한쪽이 `version` 충돌로 거부되는 것
 
-### 3. 프론트 로딩 (배경)
+### 3. 접근 제어
+
+등급 간 경계를 DB가 지킨다는 것을 보인다([db-privileges.md](./db-privileges.md)).
+
+- 학생 계정으로 예약을 `DELETE`하면 권한 오류로 거부되는 것
+- 학생 계정으로 회차 설정을 `UPDATE`하면 거부되는 것
+- 학생 계정으로 공지 뷰를 읽으면 숨김 공지가 나오지 않는 것
+- 관리자 계정으로 어떤 테이블이든 쓰면 거부되는 것
+
+### 4. 프론트 로딩 (배경)
 
 grad42 `docs/perf/2026-11-04-baseline.md`의 운영 측정값을 Background에서 인용한다.
 
@@ -54,6 +63,7 @@ grad42 `docs/perf/2026-11-04-baseline.md`의 운영 측정값을 Background에�
 
 - Firestore의 실시간 구독(`onSnapshot`)이 없어진다. 관리자가 접수를 닫아도 열려 있는 화면에 바로 반영되지 않는다.
 - Firebase가 대신 해 주던 인증, 보안 규칙, 호스팅을 직접 맡아야 한다. 이 프로젝트는 그 부분을 테스트 로그인과 로컬 실행으로 생략했다.
+- Firestore Security Rules는 사용자 단위로 읽기를 막아 주었다. MySQL 권한은 계정 단위라 "본인 예약만 본다"는 서버 코드가 지켜야 한다([db-privileges.md](./db-privileges.md)).
 - 측정은 로컬 환경의 합성 데이터로 한다.
 
 ## 미정

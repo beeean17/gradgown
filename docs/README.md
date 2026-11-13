@@ -21,6 +21,8 @@
 | MySQL과 Spring Boot로 만든다 | DB 확정, 나머지 잠정 | [tech-stack.md](./decisions/tech-stack.md) |
 | localhost에서만 실행한다 | 확정 | [local-only.md](./decisions/local-only.md) |
 | Google 로그인 대신 테스트 계정으로 로그인한다 | 확정 | [test-login.md](./decisions/test-login.md) |
+| 학생용과 관리자용 서버를 나눈다 | 확정 | [admin-server-split.md](./decisions/admin-server-split.md) |
+| 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다 | 확정 (권한 표는 초안) | [db-privileges.md](./decisions/db-privileges.md) |
 | Firestore 구조를 테이블 11개로 옮긴다 | 초안 | [data-model.md](./decisions/data-model.md) |
 | 평가는 DB 수준 비교를 중심으로 한다 | 제안 | [evaluation.md](./decisions/evaluation.md) |
 
@@ -33,7 +35,9 @@
 | 관리자 기능을 어디까지 넣을지 (설정 저장, 공지·FAQ 작성, 명단 내보내기) | [scope.md](./decisions/scope.md) |
 | 테스터 권한을 넣을지 | [scope.md](./decisions/scope.md), [data-model.md](./decisions/data-model.md) |
 | 테스트 로그인의 구체적인 방식 | [test-login.md](./decisions/test-login.md) |
-| API 응답 모양, 쓰기 경로의 형태, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
+| API 응답 모양, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
+| 관리자용 서버가 조회 계정과 마스터 계정을 골라 쓰는 방식, 두 서버의 공용 코드, 포트 | [admin-server-split.md](./decisions/admin-server-split.md) |
+| MySQL role을 쓸지, 테이블을 만드는 계정을 따로 둘지 | [db-privileges.md](./decisions/db-privileges.md) |
 | 과제 쪽 미확인 사항 (제출 기한, 배점, 개인/팀, 제출 형식, 보고서 언어) | [requirements/course-requirements.md](./requirements/course-requirements.md) |
 
 ## 원본 서비스

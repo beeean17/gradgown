@@ -1,7 +1,7 @@
 # 웹과 서버 사이의 API 계약
 
-- 상태: 초안 (2026-11-14). 경로 이름과 응답 형식은 제안이고, 구현하면서 확정한다
-- 관련: [tech-stack.md](../decisions/tech-stack.md), [scope.md](../decisions/scope.md), [test-login.md](../decisions/test-login.md), [data-model.md](../decisions/data-model.md)
+- 상태: 초안 (2026-11-14). 학생용과 관리자용 서버를 나누는 것은 확정이다. 경로 이름과 응답 형식은 제안이고, 구현하면서 확정한다
+- 관련: [admin-server-split.md](../decisions/admin-server-split.md), [db-privileges.md](../decisions/db-privileges.md), [tech-stack.md](../decisions/tech-stack.md), [scope.md](../decisions/scope.md), [test-login.md](../decisions/test-login.md), [data-model.md](../decisions/data-model.md)
 - 근거: grad42 main의 `web/src`, `admin-web/src`, `web/docs/data-and-auth.md`, `docs/contracts/reservation-command.md`, `mentoring-command.md`
 
 ## 지금은 API 계약이 없다
@@ -66,7 +66,8 @@
 
 | 항목 | 규칙 |
 |---|---|
-| 경로 | 모두 `/api` 아래. 관리자용은 `/api/admin` 아래 |
+| 서버 | 학생 API와 관리자 API는 서로 다른 서버가 제공한다([admin-server-split.md](../decisions/admin-server-split.md)). 포트는 미정 |
+| 경로 | 모두 `/api` 아래. 관리자용 서버의 경로는 `/api/admin` 아래 |
 | 형식 | JSON |
 | 응답 모양 | 학생 웹의 화면 타입(`web/src/shared/types/index.ts`)을 그대로 쓴다. `ReservationPeriod`, `Reservation`, `MentoringEvent`, `MentoringRegistration`, `Announcement` |
 | 시각 | 서울 오프셋 ISO 문자열(`2026-10-20T13:00:00+09:00`). 지금 웹의 `iso()`가 만드는 형식과 같다 |
@@ -91,7 +92,7 @@
 
 ### 쓰기
 
-요청과 응답의 필드는 기존 명령 계약을 그대로 쓴다. `action` 필드만 경로와 메서드로 옮긴다.
+기존 callable은 함수 하나가 여러 작업을 받고, 본문의 `action` 값(`reservation.create` 등)으로 어떤 작업인지 구분했다. REST에서는 경로와 메서드가 그 역할을 하므로 `action` 필드를 없애고 작업마다 경로를 둔다. 나머지 요청·응답 필드는 기존 명령 계약을 그대로 쓴다.
 
 | 메서드와 경로 | 기존 action | 본문 |
 |---|---|---|
@@ -134,9 +135,11 @@
 | `POST /api/auth/logout` | 로그아웃 |
 | `GET /api/me` | `{ uid, email, role }`. 로그인하지 않았으면 401 |
 
+세 경로는 두 서버에 각각 있다. 학생용 서버는 학생 계정만, 관리자용 서버는 관리자·마스터 계정만 로그인시킨다.
+
 ## 관리자 API (제안)
 
-[scope.md](../decisions/scope.md)에서 포함하기로 한 조회만 적는다.
+관리자용 서버가 제공한다. [scope.md](../decisions/scope.md)에서 포함하기로 한 조회만 적는다. 조회는 읽기 권한만 있는 관리자 DB 계정으로 실행한다([db-privileges.md](../decisions/db-privileges.md)).
 
 | 메서드와 경로 | 대체하는 것 | 달라지는 점 |
 |---|---|---|
@@ -165,6 +168,6 @@
 ## 확인할 것
 
 - 응답을 화면 타입 그대로 줄지, Firestore 문서 모양을 흉내 내 매퍼를 남길지. 초안은 앞쪽이다.
-- 쓰기를 리소스별 경로로 나눌지, 기존처럼 명령 하나(`action` 필드)로 둘지. 초안은 앞쪽이다.
 - `failed-precondition`의 HTTP 상태(409와 422 중).
-- 관리자 앱을 실제로 가져올지, 가져온다면 어느 화면까지인지.
+- 관리자 앱의 어느 화면까지 가져올지, 관리자 쓰기를 넣을지([scope.md](../decisions/scope.md)).
+- DB가 권한 오류로 거부한 요청을 어떤 `code`로 돌려줄지. 제안은 `permission-denied`다.

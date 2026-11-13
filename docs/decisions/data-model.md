@@ -1,7 +1,7 @@
 # Firestore 구조를 테이블 11개로 옮긴다
 
 - 상태: 초안 (2026-11-13). DDL을 아직 쓰지 않았고 MySQL에서 실행해 확인하지 않았다
-- 관련: [scope.md](./scope.md), [tech-stack.md](./tech-stack.md), [evaluation.md](./evaluation.md)
+- 관련: [scope.md](./scope.md), [tech-stack.md](./tech-stack.md), [db-privileges.md](./db-privileges.md), [evaluation.md](./evaluation.md)
 - 근거: grad42 main의 `firebase/docs/data-model.md`, `docs/requirements/gown-reservation.md`, `docs/requirements/mentoring.md`, `docs/contracts/*.md`
 
 ## 결정
@@ -83,6 +83,13 @@ Firestore의 문서, 하위 컬렉션, 중첩 map을 **테이블 11개**로 정�
 - 신청·변경·취소는 접수가 열려 있고 기간 안일 때만 된다(RES-21, MNT-21).
 - 변경·취소는 현재 회차의 `reserved` 건만 된다(RES-23, MNT-23).
 - 접수를 열려면 선택지 7개 모두 이름이 있어야 한다(MNT-51).
+
+## 뷰와 접속 계정
+
+등급별 접근 제어를 DB 권한으로 하기로 했다([db-privileges.md](./db-privileges.md)). 그래서 스키마에 다음이 더해진다.
+
+- **노출 중인 공지만 보이는 뷰.** 학생 계정은 `announcements` 테이블 대신 이 뷰만 읽는다.
+- **DB 계정 셋**(학생, 관리자, 마스터)과 계정별 `GRANT`. 권한 표는 [db-privileges.md](./db-privileges.md)에 있다.
 
 ## 일부러 정규화하지 않은 것
 

@@ -8,7 +8,7 @@
 | 층 | 선택 | 상태 |
 |---|---|---|
 | DB | MySQL 8.x | 확정 |
-| 서버 | Spring Boot (Java) | 잠정. 처음부터 "Spring이 아니어도 된다"는 조건이었다 |
+| 서버 | Spring Boot (Java). 학생용과 관리자용 서버 둘([admin-server-split.md](./admin-server-split.md)) | 잠정. 처음부터 "Spring이 아니어도 된다"는 조건이었다. 서버를 둘로 나누는 것은 확정 |
 | 프론트 | grad42의 `web/`, `admin-web/`(React)을 가져와 데이터 계층만 REST 호출로 바꾼다 | 잠정 |
 
 ## 이유
