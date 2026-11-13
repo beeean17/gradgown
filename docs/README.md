@@ -4,11 +4,12 @@
 
 | 폴더 | 내용 |
 |---|---|
-| [course-materials/](./course-materials/) | 과제 안내 슬라이드 PDF 원본 4개 |
-| [requirements/](./requirements/) | 과제 요구사항 분석 |
+| [requirements/](./requirements/) | [과제 요구사항](./requirements/course-requirements.md)과 [보고서 요구사항·충족 현황](./requirements/report-requirements.md) |
 | [decisions/](./decisions/) | 결정 기록. 결정 하나에 문서 하나 |
 | [contracts/](./contracts/) | 웹과 서버 사이의 계약. [web-api.md](./contracts/web-api.md)는 초안이다 |
 | [testing/](./testing/) | 테스트 계획. [개요](./testing/README.md), [정적 계열](./testing/static.md), [동적 계열](./testing/dynamic.md). 모두 제안이다 |
+
+과제 안내 슬라이드 PDF는 저장소에 넣지 않는다. 로컬의 `docs/course-materials/`에 두고 `.gitignore`로 제외한다. 내용은 [과제 요구사항](./requirements/course-requirements.md)에 쪽 단위로 대조해 두었다.
 
 ## 결정 기록
 
@@ -21,6 +22,7 @@
 | 학위복 대여와 St:talk 두 서비스를 모두 구현한다 | 확정 | [scope.md](./decisions/scope.md) |
 | MySQL과 Spring Boot로 만든다 | DB 확정, 나머지 잠정 | [tech-stack.md](./decisions/tech-stack.md) |
 | localhost에서만 실행한다 | 확정 | [local-only.md](./decisions/local-only.md) |
+| MySQL은 Docker 컨테이너로 띄운다 | 확정 (구성은 제안) | [mysql-docker.md](./decisions/mysql-docker.md) |
 | Google 로그인 대신 테스트 계정으로 로그인한다 | 확정 | [test-login.md](./decisions/test-login.md) |
 | 학생용과 관리자용 서버를 나눈다 | 확정 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다 | 확정 (권한 표는 초안) | [db-privileges.md](./decisions/db-privileges.md) |
@@ -32,7 +34,8 @@
 
 | 항목 | 어디에 영향을 주나 |
 |---|---|
-| MySQL을 어떻게 띄울지 (Docker, 직접 설치 등) | [local-only.md](./decisions/local-only.md) |
+| MySQL 이미지의 버전, 스키마 변경을 관리하는 방법 | [mysql-docker.md](./decisions/mysql-docker.md) |
+| 보고서의 분량 기준·언어, 개요, ER 다이어그램, 참고 문헌 | [requirements/report-requirements.md](./requirements/report-requirements.md) |
 | Spring에서 DB에 접근하는 방식 (JPA, JDBC 등) | [tech-stack.md](./decisions/tech-stack.md) |
 | 관리자 기능을 어디까지 넣을지 (설정 저장, 공지·FAQ 작성, 명단 내보내기) | [scope.md](./decisions/scope.md) |
 | 테스터 권한을 넣을지 | [scope.md](./decisions/scope.md), [data-model.md](./decisions/data-model.md) |
