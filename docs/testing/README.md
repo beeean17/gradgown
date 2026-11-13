@@ -53,7 +53,7 @@ grad42에는 같은 규칙을 검사하는 테스트가 이미 있다. 테스트
 
 | 항목 | 영향 |
 |---|---|
-| 테스트용 MySQL을 어떻게 띄울지 | 동적 계열 전체. [local-only.md](../decisions/local-only.md)의 미정 항목과 같다 |
+| 테스트 사이에 DB 상태를 되돌리는 방법 | 동적 계열 전체. 테스트용 MySQL은 Docker 컨테이너로 띄우기로 했다([mysql-docker.md](../decisions/mysql-docker.md)) |
 | 서버의 정적 검사 도구 | [static.md](./static.md) |
 | 브라우저 테스트를 자동화할지 | [dynamic.md](./dynamic.md) |
 | CI를 언제 돌리고 어디까지 넣을지 | [ci.md](../decisions/ci.md) |

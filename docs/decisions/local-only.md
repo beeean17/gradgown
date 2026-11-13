@@ -23,6 +23,7 @@
 - **성능 비교의 조건이 달라진다.** 운영 중인 Firebase 사이트와 로컬 서버를 같은 조건으로 잴 수 없다. 응답 시간보다 구조적인 지표를 본다([evaluation.md](./evaluation.md)).
 - CORS, HTTPS, 도메인 설정을 다루지 않는다.
 
-## 미정
+## 이후 결정
 
-- MySQL을 띄우는 방법. 2026-11-13 현재 개발 머신에는 로컬 MySQL이 설치돼 있지 않고 Docker 데몬은 꺼져 있다.
+- MySQL을 띄우는 방법은 Docker 컨테이너로 정했다([mysql-docker.md](./mysql-docker.md), 2026-11-14).
+- 테스트는 GitHub Actions에서도 돌린다. 서비스를 배포하는 것이 아니므로 이 결정과 어긋나지 않는다([ci.md](./ci.md)).
