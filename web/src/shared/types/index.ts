@@ -1,10 +1,11 @@
 /**
- * Domain types for the student app. Reservation and content shapes follow the
- * live Firestore schema (`settings/reservation`,
- * `users/{uid}/gown_reservations/*`, `information/{announcements,faq}`) as
- * documented in private/documents/03-react-v2/admin-api-inventory.md.
- * Firestore Timestamps become Seoul-offset ISO strings at the data boundary;
- * the UI never depends on the Timestamp class.
+ * Domain types for the student app, and the contract with the student
+ * server: its responses have exactly these shapes
+ * (docs/contracts/web-api.md), so the app uses them without mapping. The
+ * shapes were first drawn from the Firestore schema of the original service
+ * (`settings/reservation`, `users/{uid}/gown_reservations/*`,
+ * `information/{announcements,faq}`); the comments below still say which
+ * document each came from. Times are Seoul-offset ISO strings.
  */
 
 // --- Reservation ---------------------------------------------------------

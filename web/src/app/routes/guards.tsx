@@ -5,7 +5,7 @@ import { useAuth } from '../../shared/auth/useAuth'
 import { readRedirectTo } from './redirectTo'
 
 /**
- * Firebase restores a session asynchronously, so the first render after a
+ * The session is read from the server asynchronously, so the first render after a
  * reload has no user yet. Redirecting on that frame would throw a signed-in
  * user off every protected URL they refresh — `/me` would land on `/home`.
  * Guards therefore wait on `loading` instead of deciding.

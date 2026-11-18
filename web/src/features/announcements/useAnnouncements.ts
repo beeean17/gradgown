@@ -1,50 +1,18 @@
 import { useCallback, useMemo } from 'react'
-import { doc } from 'firebase/firestore'
-import { firebase } from '../../shared/firebase/runtime'
 import { restartLive, useLive } from '../../shared/data/live'
-import { docSource } from '../../shared/data/snapshots'
-import { iso, obj, str, type Data } from '../../shared/data/values'
+import { fetchSource } from '../../shared/data/fetchSource'
 import type { Announcement } from '../../shared/types'
 
 /**
- * `information/announcements` is one public document: `metadata` plus one map
- * entry per announcement. One listener serves every screen that shows them.
+ * The announcements come from the student server, which reads the view of
+ * visible announcements: a hidden one never reaches the browser. In the
+ * original they were one public Firestore document, hidden entries included,
+ * and this module filtered them. One stream serves every screen.
  */
 const KEY = 'doc:information/announcements'
 
-export function toAnnouncements(data: Data): Announcement[] {
-  return Object.entries(data)
-    .filter(([id]) => id !== 'metadata')
-    .map(([id, value]) => {
-      const entry = obj(value)
-      const createdAt = iso(entry.createdAt)
-      return {
-        id,
-        title: str(entry.title),
-        content: str(entry.content),
-        category: str(entry.category) || '일반',
-        tags: [],
-        attachments: [],
-        isPinned: entry.isPinned === true,
-        isVisible: entry.isVisible === true,
-        showOnHome: entry.showOnToggle === true,
-        isPopup: entry.isPopup === true,
-        authorId: str(entry.authorId),
-        createdAt,
-        updatedAt: iso(entry.updatedAt) || createdAt,
-        publishedAt: createdAt || null,
-      }
-    })
-    .filter((item) => item.isVisible && item.title)
-    .sort(
-      (a, b) => Number(b.isPinned) - Number(a.isPinned) || b.createdAt.localeCompare(a.createdAt),
-    )
-}
-
-const source = docSource(
-  () => doc(firebase().db, 'information', 'announcements'),
-  (data) => toAnnouncements(data ?? {}),
-)
+/** Visible announcements only, pinned first, then newest first: the server filters and sorts. */
+const source = fetchSource<Announcement[]>('/api/announcements')
 
 const EMPTY: Announcement[] = []
 

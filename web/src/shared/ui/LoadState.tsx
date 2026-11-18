@@ -10,9 +10,9 @@ import { useOnline } from '../hooks/useOnline'
 const SLOW_AFTER_MS = 8_000
 
 /**
- * Waiting on Firestore. Never rendered as "empty" — that would be a wrong
- * answer. Firestore itself never reports "offline" to a listener: without a
- * server answer the stream just stays `loading`, so this is where a student
+ * Waiting on the server. Never rendered as "empty" — that would be a wrong
+ * answer. A request that gets no answer just leaves the stream `loading` until
+ * it gives up, so this is where a student
  * with no connection learns why nothing is happening — at once when the
  * browser knows it is offline, otherwise after the wait turns suspicious.
  */

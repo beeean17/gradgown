@@ -1,16 +1,15 @@
-import { newOperationId, sendCommand, type CommandResponse } from '../../shared/firebase/command'
+import { newOperationId, sendCommand, type CommandResponse } from '../../shared/api/command'
 import type { MentoringRegistration } from '../../shared/types'
 
 /**
- * Students never write registration documents directly — the rules forbid it
- * (MNT-28). Every create/update/cancel goes through the `mentoringCommand`
- * callable, which checks the switch, the period, the option rules and the
- * version in one transaction and writes `adminAuditLogs/{operationId}`.
- * Contract: docs/contracts/mentoring-command.md.
+ * Every create/update/cancel is a command of the student server, which checks
+ * the switch, the period, the option rules and the version in one transaction
+ * and writes the matching `audit_logs` row. (In the original it was the
+ * `mentoringCommand` callable.) Contract: docs/contracts/web-api.md.
  */
 
 export { newOperationId }
-export { CommandError as MentoringCommandError } from '../../shared/firebase/command'
+export { CommandError as MentoringCommandError } from '../../shared/api/command'
 
 export interface MentoringInput {
   name: string
@@ -43,7 +42,7 @@ const UNKNOWN_MESSAGE =
   '요청 결과를 확인하지 못했어요. 내 신청에서 반영 여부를 먼저 확인해 주세요. 다시 시도해도 중복으로 신청되지는 않아요.'
 
 function send(request: Record<string, unknown> & { operationId: string }) {
-  return sendCommand<MentoringCommandResponse>('mentoringCommand', request, UNKNOWN_MESSAGE)
+  return sendCommand<MentoringCommandResponse>(request, UNKNOWN_MESSAGE)
 }
 
 export function createRegistration(input: MentoringInput, operationId: string) {

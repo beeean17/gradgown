@@ -1,40 +1,19 @@
-import { doc, onSnapshot, Timestamp } from 'firebase/firestore'
-import { firebase } from '../firebase/runtime'
 import type { LiveSource } from './live'
-import { obj, type Data } from './values'
 
 /**
- * `settings_private/{reservation_testing,mentoring_testing}`: the accounts
- * operations let through outside the public windows. The rules let admins and
- * the testers a document lists read it; everyone else is denied, which is the
- * ordinary "not a tester" answer rather than a failure — so it never blocks a
- * student.
+ * Tester privilege. The original service let listed testers apply outside the
+ * application window (`settings_private/*_testing`). This project leaves that
+ * out (docs/decisions/scope.md), so nobody is a tester: the source answers
+ * `false` at once, and the screens that ask keep working unchanged.
  */
-
-/** Mirrors the server's `isTester`: enabled, not expired, and this UID listed. */
-export function isListedTester(data: Data | undefined, uid: string, now: Date = new Date()): boolean {
-  const expiresAt = data?.expiresAt
-  return (
-    data?.enabled === true &&
-    expiresAt instanceof Timestamp &&
-    now.getTime() < expiresAt.toMillis() &&
-    obj(data.allowedUserIds)[uid] === true
-  )
-}
 
 export function testingKey(documentId: string, uid: string): string {
   return `user:${uid}:${documentId}`
 }
 
-export function testingSource(documentId: string, uid: string): LiveSource<boolean> {
-  return ({ next }) =>
-    onSnapshot(
-      doc(firebase().db, 'settings_private', documentId),
-      { includeMetadataChanges: true },
-      (snapshot) => {
-        if (snapshot.metadata.fromCache && !snapshot.exists()) return
-        next(isListedTester(snapshot.data(), uid))
-      },
-      () => next(false),
-    )
+export function testingSource(_documentId: string, _uid: string): LiveSource<boolean> {
+  return ({ next }) => {
+    next(false)
+    return () => {}
+  }
 }

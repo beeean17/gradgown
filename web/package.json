@@ -1,25 +1,19 @@
 {
-  "name": "web-v2",
+  "name": "gradgown-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:emulator": "vite --mode emulator --host 127.0.0.1",
-    "seed:emulator": "node scripts/seed-emulator.mjs",
     "build": "tsc -b && vite build",
-    "build:check": "tsc -b && vite build --mode emulator",
     "lint": "oxlint",
-    "preview": "vite preview",
-    "perf:lighthouse": "node scripts/perf-lighthouse.mjs",
-    "perf:bundle": "node scripts/bundle-breakdown.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@astryxdesign/core": "^0.2.0",
     "@astryxdesign/theme-neutral": "^0.2.0",
     "@fontsource-variable/noto-sans": "^5.3.0",
     "@fontsource-variable/noto-sans-kr": "^5.3.1",
-    "firebase": "^12.17.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",

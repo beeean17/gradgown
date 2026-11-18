@@ -1,18 +1,18 @@
 import { useSyncExternalStore } from 'react'
-import { onAuthStateChanged, type User } from 'firebase/auth'
-import { firebase, startAppCheckWhenIdle } from '../firebase/runtime'
-import { ensureProfile } from './profile'
+import { ApiError, apiGet, SESSION_LOST_EVENT } from '../api/http'
 
 /**
- * `loading` is Firebase's real first state: the session is restored after the
- * first render, and route guards must wait rather than redirect.
+ * Who is signed in, read from the student server's session (`GET /api/me`).
+ * There is no Google sign-in here: the server signs in one of the seeded test
+ * accounts (docs/decisions/test-login.md), and the session lives in a cookie.
  */
+
 export type AuthStatus = 'loading' | 'authenticated' | 'guest'
 
-/** The signed-in Google account. The email is the only identity the UI shows. */
 export interface AuthUser {
   uid: string
   email: string
+  /** Test accounts have no display name; kept so the screens need no change. */
   displayName: string
 }
 
@@ -21,35 +21,44 @@ export interface AuthState {
   user: AuthUser | null
 }
 
+/** The answer of `GET /api/me` and `POST /api/auth/login`. */
+export interface Me {
+  uid: string
+  email: string
+  role: string
+}
+
 const LOADING: AuthState = { status: 'loading', user: null }
 const GUEST: AuthState = { status: 'guest', user: null }
 
 let state: AuthState = LOADING
-let currentUser: User | null = null
 let started = false
+// Set once sign-out begins: the page is about to reload, and the screen must
+// not flash the guest state on the way out.
 let frozen = false
 const listeners = new Set<() => void>()
+
+function publish(next: AuthState) {
+  if (frozen) return
+  state = next
+  listeners.forEach((listener) => listener())
+}
+
+/** Takes the server's answer as the signed-in user. */
+export function setSignedIn(me: Me) {
+  publish({ status: 'authenticated', user: { uid: me.uid, email: me.email, displayName: '' } })
+}
 
 function start() {
   if (started) return
   started = true
-  onAuthStateChanged(firebase().auth, (user) => {
-    if (frozen) return
-    currentUser = user
-    state = user
-      ? {
-          status: 'authenticated',
-          user: { uid: user.uid, email: user.email ?? '', displayName: user.displayName ?? '' },
-        }
-      : GUEST
-    if (user) {
-      ensureProfile(user).catch((error) => console.error('[grad42] 사용자 프로필을 준비하지 못했습니다.', error))
-      // Only a signed-in student can send a reservation command, the one call
-      // that needs an App Check token.
-      startAppCheckWhenIdle()
+  apiGet<Me>('/api/me').then(setSignedIn, (error) => {
+    if (!(error instanceof ApiError && error.status === 401)) {
+      console.error('[grad42] 로그인 상태를 확인하지 못했습니다.', error)
     }
-    listeners.forEach((listener) => listener())
+    publish(GUEST)
   })
+  window.addEventListener(SESSION_LOST_EVENT, () => publish(GUEST))
 }
 
 function subscribe(listener: () => void): () => void {
@@ -63,24 +72,16 @@ function getSnapshot(): AuthState {
   return state
 }
 
-/**
- * Stops publishing auth changes for the rest of this page. Sign-out reloads
- * the page, and until the new one paints the old one should stay as it was —
- * not react to its own sign-out by bouncing to the login prompt.
- */
+/** Stops auth updates from reaching the screens (see `signOutAndReload`). */
 export function freezeAuth() {
   frozen = true
 }
 
-/** Firebase's own user object, for code that needs a token or the profile promise. */
-export function currentFirebaseUser(): User | null {
-  return currentUser
+/** The signed-in user right now, for code outside React (commands, sign-out). */
+export function currentUser(): AuthUser | null {
+  return state.user
 }
 
-/**
- * Auth is a subscription, not a value read at render time: signing in from a
- * dialog has to update the shell, the guards and the page at once.
- */
 export function useAuth(): AuthState {
   return useSyncExternalStore(subscribe, getSnapshot, () => LOADING)
 }

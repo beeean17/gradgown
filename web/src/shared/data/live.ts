@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
 
 /**
- * A value that streams from Firestore. Screens render all three states:
+ * A value that is read from the server and kept fresh (it streamed from
+ * Firestore in the original). Screens render all three states:
  * `loading` must not flash a wrong "empty" answer, and `error` must not be
  * mistaken for "nothing there".
  */
@@ -15,7 +16,7 @@ export type LiveEmitter<T> = {
   fail: (error: Error) => void
 }
 
-/** Opens a Firestore listener and returns its unsubscribe. */
+/** Starts reading and returns a function that stops it. See `fetchSource`. */
 export type LiveSource<T> = (emit: LiveEmitter<T>) => () => void
 
 const LOADING: Live<never> = { status: 'loading', data: undefined, error: null }
@@ -32,13 +33,11 @@ interface Entry {
 /**
  * One listener per key, shared by every component that reads it, and kept
  * alive briefly after the last reader leaves so moving between pages shows the
- * last value instead of a spinner. Firestore bills per document change, not
- * per subscriber, so sharing is free; the grace period is only for UX.
+ * last value instead of a spinner. Sharing also means one request per key
+ * however many components show it.
  */
 const entries = new Map<string, Entry>()
 const IDLE_MS = 30_000
-// First values from somewhere faster than a key's listener (primeLive).
-const primed = new Map<string, Live<unknown>>()
 
 function entryFor(key: string, source: LiveSource<unknown>): Entry {
   let entry = entries.get(key)
@@ -50,8 +49,6 @@ function entryFor(key: string, source: LiveSource<unknown>): Entry {
 }
 
 function publish(entry: Entry, state: Live<unknown>) {
-  // The listener has answered; a primed value must never stand in for it again.
-  if (state.status !== 'loading') primed.delete(entry.key)
   entry.state = state
   entry.listeners.forEach((listener) => listener())
 }
@@ -60,8 +57,8 @@ function start(entry: Entry) {
   entry.stop = entry.source({
     next: (data) => publish(entry, { status: 'ready', data, error: null }),
     fail: (error) => {
-      // Firestore closes a listener after an error; forget it so the next
-      // reader (or `restartLive`) opens a fresh one.
+      // A source stops itself when it fails; forget it so the next reader
+      // (or `restartLive`) starts a fresh one.
       entry.stop = null
       publish(entry, { status: 'error', data: undefined, error })
     },
@@ -105,20 +102,7 @@ export function useLive<T>(key: string | null, source: LiveSource<T>): Live<T> {
 }
 
 function stateOf(key: string): Live<unknown> {
-  const state = entries.get(key)?.state ?? LOADING
-  return state.status === 'loading' ? (primed.get(key) ?? state) : state
-}
-
-/**
- * A first value for `key` from somewhere faster than its listener — the edge
- * copy of a public document. Readers see it only until the listener first
- * answers; after that it is dropped, so it can never replace live data.
- */
-export function primeLive<T>(key: string, data: T) {
-  const entry = entries.get(key)
-  if (entry && entry.state.status !== 'loading') return
-  primed.set(key, { status: 'ready', data, error: null })
-  entry?.listeners.forEach((listener) => listener())
+  return entries.get(key)?.state ?? LOADING
 }
 
 const noSubscription = () => () => {}
@@ -132,6 +116,24 @@ function subscriberFor(key: string, source: LiveSource<unknown>) {
     subscribers.set(key, subscribeToKey)
   }
   return subscribeToKey
+}
+
+/**
+ * Reads again every stream whose key matches, leaving the last value on
+ * screen until the new one arrives. Used after a command: the REST server does
+ * not push changes the way a Firestore listener did.
+ */
+export function refreshLive(match: (key: string) => boolean) {
+  entries.forEach((entry, key) => {
+    if (!match(key) || !entry.stop) return
+    if (entry.listeners.size === 0) {
+      // Nobody is looking; the next reader starts a fresh read.
+      stop(entry)
+      return
+    }
+    entry.stop()
+    start(entry)
+  })
 }
 
 /** Re-opens a listener that ended in an error (a "다시 시도" button). */

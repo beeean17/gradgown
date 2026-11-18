@@ -3,22 +3,16 @@ import { VStack } from '@astryxdesign/core/Stack'
 import { Heading } from '@astryxdesign/core/Heading'
 import { Text } from '@astryxdesign/core/Text'
 import { Link } from '@astryxdesign/core/Link'
-import { useLocation } from 'react-router-dom'
 import { PATHS } from '../../../app/routes/paths'
-import { readRedirectTo } from '../../../app/routes/redirectTo'
 import { ORG } from '../../../shared/content/contact'
-import { GoogleSignIn } from '../components/GoogleSignIn'
+import { TestAccountSignIn } from '../components/TestAccountSignIn'
 
 /**
- * Login screen for guard redirects and shared links. Navigation after sign-in
- * is RequireGuest's job: as soon as the session exists it forwards to the
- * validated `redirectTo`, for the popup and the redirect fallback alike.
+ * The full-page login. Signing in changes the auth state, and the route guard
+ * around this page (`GuestOnly`) then sends the student on to where they were
+ * going.
  */
 export function LoginPage() {
-  const { search } = useLocation()
-  // Validated: an off-origin `redirectTo` is discarded, never followed.
-  const redirectTo = readRedirectTo(search)
-
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-[26.25rem] flex-col justify-center px-4 py-8">
       <Card padding={6} elevation="low">
@@ -31,12 +25,10 @@ export function LoginPage() {
               </Heading>
             </div>
             <Text type="body" color="secondary" justify="center">
-              구글 계정으로 로그인해 주세요.
+              테스트 계정을 골라 로그인해 주세요.
             </Text>
           </VStack>
-
-          <GoogleSignIn label="Google로 계속하기" returnTo={redirectTo} />
-
+          <TestAccountSignIn />
           <div className="flex justify-center">
             <Link href={PATHS.home} isStandalone>
               로그인 없이 둘러보기

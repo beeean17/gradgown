@@ -1,15 +1,17 @@
-import { collection, doc, query, where } from 'firebase/firestore'
-import { firebase } from '../../shared/firebase/runtime'
 import type { LiveSource } from '../../shared/data/live'
-import { docSource, querySource } from '../../shared/data/snapshots'
+import { fetchSource } from '../../shared/data/fetchSource'
 import {
-  isListedTester,
   testingKey as sharedTestingKey,
   testingSource as sharedTestingSource,
 } from '../../shared/data/testing'
-import { iso, obj, str, version, type Data } from '../../shared/data/values'
-import { formatClock } from '../../shared/lib/datetime'
 import type { GownSize, Reservation, ReservationPeriod, ReservationSlot } from '../../shared/types'
+
+/**
+ * Where the reservation screens get their data: the student server
+ * (docs/contracts/web-api.md). The server answers in the screen types
+ * (`ReservationPeriod`, `Reservation`), so nothing is mapped here; the
+ * Firestore-document mappers of the original are gone.
+ */
 
 /**
  * Mapping between the live reservation schema and the UI model.
@@ -34,105 +36,23 @@ export function storedSize(size: GownSize): string {
   return size.toLowerCase()
 }
 
-function periodTitle(periodId: string): string {
-  const match = /^(\d{4})-(\d{2})$/.exec(periodId)
-  return match ? `${match[1]}년 ${Number(match[2])}월 학위복 예약` : '학위복 예약'
-}
-
-function toSlots(data: Data, periodId: string): Omit<ReservationSlot, 'type'>[] {
-  return Object.entries(obj(data.slotsByDate))
-    .flatMap(([date, group]) => {
-      const slots = obj(group).slots
-      if (!Array.isArray(slots)) return []
-      return slots.map((value) => {
-        const slot = obj(value)
-        const startsAt = iso(slot.startsAt)
-        const endsAt = iso(slot.endsAt)
-        return {
-          slotId: `${date}_${str(slot.id)}`,
-          periodId,
-          startsAt,
-          endsAt,
-          label: startsAt && endsAt ? `${formatClock(startsAt)}–${formatClock(endsAt)}` : '',
-          isActive: slot.enabled === true && Boolean(str(slot.id) && startsAt && endsAt),
-        }
-      })
-    })
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-}
-
-export function toPeriod(data: Data | undefined): ReservationPeriod | null {
-  if (!data) return null
-  const periodId = str(data.periodId)
-  if (!periodId) return null
-  const create = obj(data.createPeriod)
-  const edit = obj(data.editPeriod)
-  const slots = toSlots(data, periodId)
-  // One timetable serves both directions: the student picks a pickup slot and,
-  // separately, a return slot from the same list (as in the Flutter app).
-  return {
-    periodId,
-    title: periodTitle(periodId),
-    status: data.isOpen === true ? 'open' : 'closed',
-    applyStartAt: iso(create.startsAt),
-    applyEndAt: iso(create.endsAt),
-    editStartAt: iso(edit.startsAt),
-    editEndAt: iso(edit.endsAt),
-    rentSlots: slots.map((slot) => ({ ...slot, type: 'rent' })),
-    returnSlots: slots.map((slot) => ({ ...slot, type: 'return' })),
-  }
-}
-
-const STATUSES = ['reserved', 'cancelled', 'completed'] as const
-
-export function toReservation(reservationId: string, data: Data): Reservation {
-  const status = str(data.status)
-  const sizeRaw = str(data.size)
-  return {
-    reservationId,
-    periodId: str(data.periodId),
-    status: (STATUSES as readonly string[]).includes(status) ? (status as Reservation['status']) : 'unknown',
-    name: str(data.name),
-    studentId: str(data.studentId),
-    department: str(data.department),
-    phone: str(data.phone),
-    size: normalizeSize(sizeRaw),
-    sizeRaw,
-    slotId: str(data.slotId),
-    rentAt: iso(data.rentTime),
-    returnAt: iso(data.returnTime),
-    isProxy: data.isProxy === true,
-    proxyName: str(data.proxyName),
-    proxyPhone: str(data.proxyPhone),
-    createdAt: iso(data.createdAt),
-    modifiedAt: iso(data.modifiedAt) || iso(data.createdAt),
-    version: version(data.modifiedAt),
-  }
-}
-
 export const PERIOD_KEY = 'doc:settings/reservation'
 
-export const periodSource: LiveSource<ReservationPeriod | null> = docSource(
-  () => doc(firebase().db, 'settings', 'reservation'),
-  toPeriod,
-)
+/** The current round and its slots; `null` when there is none. Public. */
+export const periodSource: LiveSource<ReservationPeriod | null> = fetchSource('/api/gown/periods/current')
 
 export function myReservationsKey(uid: string, periodId: string): string {
   return `user:${uid}:gown_reservations:${periodId}`
 }
 
 /** The signed-in student's reservations in one round, newest change first. */
-export function myReservationsSource(uid: string, periodId: string): LiveSource<Reservation[]> {
-  return querySource(
-    () => query(collection(firebase().db, 'users', uid, 'gown_reservations'), where('periodId', '==', periodId)),
-    (snapshot) =>
-      snapshot.docs
-        .map((item) => toReservation(item.id, item.data()))
-        .sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt)),
-  )
+/**
+ * The signed-in student's reservations of one round, newest change first. The
+ * server takes the student from the session; `uid` only names the stream.
+ */
+export function myReservationsSource(_uid: string, periodId: string): LiveSource<Reservation[]> {
+  return fetchSource(`/api/gown/reservations/me?periodId=${encodeURIComponent(periodId)}`)
 }
-
-export { isListedTester }
 
 const TESTING_DOC = 'reservation_testing'
 

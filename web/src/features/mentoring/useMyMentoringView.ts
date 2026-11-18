@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PATHS } from '../../app/routes/paths'
-import { describeCommandError } from '../../shared/firebase/command'
+import { describeCommandError } from '../../shared/api/command'
 import { OFFLINE_MESSAGE, useOnline } from '../../shared/hooks/useOnline'
 import { kstParts } from '../../shared/lib/datetime'
 import type { MentoringEvent, MentoringRegistration } from '../../shared/types'

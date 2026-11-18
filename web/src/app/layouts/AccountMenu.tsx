@@ -139,7 +139,7 @@ export function AccountMenu({ triggerClassName }: { triggerClassName?: string })
   const pickupLabel = usePickupMenuLabel()
   const mentoringLabel = useMentoringMenuLabel()
 
-  // Keep the slot empty while Firebase resolves the session so the
+  // Keep the slot empty while the session is being read so the
   // user never sees a sign-in flash before their account appears.
   if (status === 'loading') return null
 
