@@ -74,7 +74,7 @@
 | RPT-40 | 전체 구조: 목표와 설계 방향 | 필수 | 1번 8쪽, 4번 6쪽, 13쪽 | 일부 | 목표와 방향은 결정 문서에 있다. 전체 구조 그림(웹, 서버 둘, DB 계정 셋, MySQL)이 없다. 예시 2는 기능 범위를 그림으로 보였다 |
 | RPT-41 | 세부 설계를 절로 나눠 설명한다 | 필수 | 1번 9쪽 | 준비됨 | 데이터 모델, 제약, 권한, API 계약([data-model.md](../decisions/data-model.md), [db-privileges.md](../decisions/db-privileges.md), [API 계약](../contracts/web-api.md)) |
 | RPT-42 | ER 모델 | 필수 | 1번 14쪽, 4번 7쪽, 14쪽, 23쪽 | 없음 | 관계를 글로만 적었다([data-model.md](../decisions/data-model.md) "관계"). ER 다이어그램이 없다 |
-| RPT-43 | DB 스키마: 테이블, 컬럼, 타입, PK와 FK | 필수 | 1번 4쪽, 4번 14쪽, 20쪽 | 일부 | DDL이 `db/init/01-schema.sql`에 있고 MySQL 8.4.13에서 제약이 동작하는 것을 테스트로 확인했다(2026-11-16). 설계의 세부는 초안이고([data-model.md](../decisions/data-model.md)), 보고서에 실을 표와 ER 다이어그램은 아직 없다 |
+| RPT-43 | DB 스키마: 테이블, 컬럼, 타입, PK와 FK | 필수 | 1번 4쪽, 4번 14쪽, 20쪽 | 일부 | DDL이 `db/init/01-schema.sql`에 있고 MySQL 8.4.13에서 제약이 동작하는 것을 테스트로 확인했다(2026-11-16). DDL의 세부는 2026-11-18에 확정했다([data-model.md](../decisions/data-model.md)). 보고서에 실을 표와 ER 다이어그램은 아직 없다 |
 | RPT-44 | DB에 어떻게 연결하는지 | 필수 | 1번 14쪽, 4번 8쪽 | 구현 필요 | 등급별 계정으로 접속한다는 결정만 있다([db-privileges.md](../decisions/db-privileges.md)) |
 | RPT-45 | 구현을 실제 코드로 설명한다. DB와 상호작용하는 코드 | 필수 | 1번 10쪽, 4번 9쪽, 15~16쪽, 23쪽 | 구현 필요 | 코드가 없다. SQL이 보고서에 드러나게 한다는 원칙은 정했다([tech-stack.md](../decisions/tech-stack.md)) |
 | RPT-46 | 읽은 사람이 재현할 수 있어야 한다 | 필수 | 1번 10쪽 | 구현 필요 | Docker로 DB를 띄우고 CI에서 처음부터 돌린다는 결정이 있다([mysql-docker.md](../decisions/mysql-docker.md), [ci.md](../decisions/ci.md)). 실행 방법 문서는 코드가 생기면 쓴다 |

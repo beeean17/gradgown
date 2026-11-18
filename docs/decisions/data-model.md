@@ -1,6 +1,6 @@
 # Firestore 구조를 테이블 11개로 옮긴다
 
-- 상태: 초안 (2026-11-16). DDL을 [`db/init/01-schema.sql`](../../db/init/01-schema.sql)에 썼고, MySQL 8.4.13에서 제약이 동작하는 것을 테스트로 확인했다. 설계 자체(아래 "DDL에서 정한 것")는 아직 확인받지 않았다
+- 상태: 잠정 (2026-11-18). 테이블 구성은 DDL로 쓰고 검토하는 동안 이견이 없었다. DDL의 세부(아래 "DDL에서 정한 것")는 2026-11-18에 확정했다. DDL은 [`db/init/01-schema.sql`](../../db/init/01-schema.sql)에 있고, MySQL 8.4.13에서 제약이 동작하는 것을 테스트로 확인했다
 - 관련: [scope.md](./scope.md), [tech-stack.md](./tech-stack.md), [db-privileges.md](./db-privileges.md), [evaluation.md](./evaluation.md)
 - 근거: grad42 main의 `firebase/docs/data-model.md`, `docs/requirements/gown-reservation.md`, `docs/requirements/mentoring.md`, `docs/contracts/*.md`
 
@@ -29,7 +29,7 @@ Firestore의 문서, 하위 컬렉션, 중첩 map을 **테이블 11개**로 정�
 | `settings/mentoring` | `mentoring_events` | 안내 문구와 EPIC Folio 링크를 포함한다 |
 | `settings/mentoring.event.sessions[]` | `mentoring_sessions` | 차시 하나가 한 행 |
 | `settings/mentoring.options[]` | `mentoring_options` | 선택지 하나가 한 행. 번호는 1~7 |
-| `users/{uid}/mentoring_registrations/*` | `mentoring_registrations` | 1·2차시 선택을 선택지 FK로 참조한다. "선택 안함"(원본의 0)은 `NULL`이다 |
+| `users/{uid}/mentoring_registrations/*` | `mentoring_registrations` | 1·2차시 선택을 선택지 FK로 참조한다. "선택 안함"(원본의 0)은 `NULL`이다. 원본이 신청마다 복사해 두던 이메일은 저장하지 않고 `users`에서 읽는다 |
 | `information/announcements` (문서 하나의 map) | `announcements` | 공지 하나가 한 행 |
 | `information/faq` (문서 하나의 map) | `faqs` | FAQ 하나가 한 행 |
 | `adminAuditLogs/{operationId}` | `audit_logs` | PK가 `operation_id`다 |
@@ -45,7 +45,7 @@ Firestore의 문서, 하위 컬렉션, 중첩 map을 **테이블 11개**로 정�
 | `mentoring_events` | PK `id` (`YYYY-MM`) | `is_open`, 신청 기간 시작·끝, 행사 날짜, 장소, 소개, 유의사항, EPIC Folio URL과 노출 여부, 현재 행사 표시 |
 | `mentoring_sessions` | PK `(event_id, session_no)` | `label`, `starts_at`, `ends_at` |
 | `mentoring_options` | PK `(event_id, option_no)` | `name` |
-| `mentoring_registrations` | PK `id`, FK `user_id`, `event_id`, 1차시 선택지, 2차시 선택지, `created_by` | `status`, 이름, 학과, 학번, 학년, 전화, 이메일, `version`, 생성·수정 시각 |
+| `mentoring_registrations` | PK `id`, FK `user_id`, `event_id`, 1차시 선택지, 2차시 선택지, `created_by` | `status`, 이름, 학과, 학번, 학년, 전화, `version`, 생성·수정 시각 |
 | `announcements` | PK `id`, FK `author_id` | 제목, 본문, 분류, 고정·노출·팝업·홈 노출 여부, 팝업 순서, 생성·수정 시각 |
 | `faqs` | PK `id` | 질문, 답변, 분류, 태그, 순서, 노출 여부 |
 | `audit_logs` | PK `operation_id`, FK 행위자 | 업무 영역, 작업, 대상, 결과, 실패 분류, 오류 코드, 시작·완료 시각 |
@@ -101,9 +101,9 @@ Firestore의 문서, 하위 컬렉션, 중첩 map을 **테이블 11개**로 정�
 - 필드 암호화([project-positioning.md](./project-positioning.md)).
 - 원본의 v1(Flutter) 호환 필드와 변환 규칙.
 
-## DDL에서 정한 것 (초안, 2026-11-16)
+## DDL에서 정한 것 (확정, 2026-11-18)
 
-위 표를 DDL로 쓰면서 정해야 했던 세부다. 모두 확인받지 않은 초안이다.
+위 표를 DDL로 쓰면서 정해야 했던 세부다. 2026-11-16에 초안으로 쓰고, 2026-11-18에 항목마다 검토해서 확정했다. 신청의 이메일 컬럼만 초안과 달라졌다.
 
 | 항목 | DDL의 선택 | 이유 |
 |---|---|---|
@@ -117,12 +117,12 @@ Firestore의 문서, 하위 컬렉션, 중첩 map을 **테이블 11개**로 정�
 | `audit_logs.operation_id` | `ascii_bin` 정렬 | 기본 정렬은 대소문자를 구분하지 않는다. 대소문자만 다른 ID는 다른 요청이다 |
 | `audit_logs.target_id` | FK를 걸지 않는다 | 마스터가 예약을 영구 삭제해도 로그는 남아야 한다 |
 | `audit_logs`의 컬럼 | 원본의 `stage`, `severity`, `retryable`, `resolved*`, `origin`, `targetUserId`는 뺐다 | 학생 명령만 기록하는 범위에서는 쓰이지 않는다 |
+| 신청의 이메일 | `mentoring_registrations`에 컬럼을 두지 않는다. 명단을 만들 때 `users`와 조인한다 | 원본은 서버가 로그인 계정의 이메일을 신청마다 복사했다. 그 값은 항상 `users.email`과 같으므로 같은 사실을 두 곳에 두지 않는다. 초안에는 컬럼이 있었다 |
 | `announcements.show_on_home` | 추가했다 | 화면 타입 `Announcement.showOnHome`(원본의 `showOnToggle`)이 쓴다 |
 | 보조 인덱스 | 제약(PK, UNIQUE, FK)이 만드는 인덱스만 있다 | 조회 쿼리를 쓰고 실행 계획을 본 뒤에 더한다([evaluation.md](./evaluation.md)) |
 
-### 검토가 필요한 점
+### 남겨 둔 중복
 
-- `mentoring_registrations.email`은 `users.email`과 같은 값이다. 위 표대로 컬럼을 두었지만, 정규화 관점에서는 빼고 명단을 만들 때 `users`와 조인하는 편이 맞다.
 - `gown_reservations.period_id`는 대여 슬롯의 회차와 항상 같다. 중복이지만 `UNIQUE (user_id, period_id, …)`에 필요해서 두었고, 복합 FK가 두 값이 어긋나지 않게 한다.
 
 ## 실행해서 확인한 것 (2026-11-16)

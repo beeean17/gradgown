@@ -22,7 +22,7 @@
 | 스키마·권한 테스트 (동적 계열 1·2층) | `db/src/test/` | 로컬에서 152개 통과. `./gradlew :db:test` |
 | CI | — | 워크플로 없음 |
 
-스키마가 동작하는 것은 확인했지만, 설계의 세부는 아직 초안이다([data-model.md](./decisions/data-model.md)의 "DDL에서 정한 것").
+DDL의 세부는 2026-11-18에 확정했다([data-model.md](./decisions/data-model.md)의 "DDL에서 정한 것").
 
 과제 안내 슬라이드 PDF는 저장소에 넣지 않는다. 로컬의 `docs/course-materials/`에 두고 `.gitignore`로 제외한다. 내용은 [과제 요구사항](./requirements/course-requirements.md)에 쪽 단위로 대조해 두었다.
 
@@ -46,14 +46,14 @@
 | 학생용과 관리자용 서버를 나눈다 | 확정 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다 | 확정 (권한 표는 초안) | [db-privileges.md](./decisions/db-privileges.md) |
 | CI는 GitHub Actions로 돌린다 | 확정 (작업 구성은 제안) | [ci.md](./decisions/ci.md) |
-| Firestore 구조를 테이블 11개로 옮긴다 | 초안 (DDL 작성, 제약 동작 확인) | [data-model.md](./decisions/data-model.md) |
+| Firestore 구조를 테이블 11개로 옮긴다 | 잠정 (DDL의 세부는 확정) | [data-model.md](./decisions/data-model.md) |
+| 시드 데이터의 날짜는 고정한다 | 확정 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 평가는 DB 수준 비교를 중심으로 한다 | 제안 | [evaluation.md](./decisions/evaluation.md) |
 
 ## 아직 정하지 않은 것
 
 | 항목 | 어디에 영향을 주나 |
 |---|---|
-| DDL의 세부 (ID와 시각의 타입, 현재 회차 표시, 대리 수령 `CHECK`의 범위, 신청의 이메일 컬럼) | [data-model.md](./decisions/data-model.md) |
 | 개발용 DB의 데이터를 남길지, 이미지 태그를 패치 버전까지 고정할지 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 보고서의 분량 기준·언어, 개요, ER 다이어그램, 참고 문헌 | [requirements/report-requirements.md](./requirements/report-requirements.md) |
 | Spring에서 DB에 접근하는 방식 (JPA, JDBC 등), Spring Boot 버전, 모듈 구성 | [tech-stack.md](./decisions/tech-stack.md) |
