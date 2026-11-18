@@ -95,6 +95,42 @@ class ReservationCommandTest extends ServerTest {
   }
 
   @Test
+  @DisplayName("an operation ID whose request never finished is busy at first and dead after two minutes")
+  void unfinishedOperationId() {
+    HttpTestClient student = signedInAs(STUDENT_5);
+    String running = newOperationId();
+    String abandoned = newOperationId();
+    dbUpdate(
+        "INSERT INTO audit_logs (operation_id, domain, action, actor_id) VALUES (?, 'reservation', 'reservation.create', 5)",
+        running);
+    dbUpdate(
+        "INSERT INTO audit_logs (operation_id, domain, action, actor_id, created_at)"
+            + " VALUES (?, 'reservation', 'reservation.create', 5, CURRENT_TIMESTAMP(3) - INTERVAL 10 MINUTE)",
+        abandoned);
+
+    assertError(409, "aborted", student.post(RESERVATIONS, createBody(running, reservationInput())));
+    assertError(
+        422, "failed-precondition", student.post(RESERVATIONS, createBody(abandoned, reservationInput())));
+    assertEquals("0", dbValue("SELECT COUNT(*) FROM gown_reservations WHERE user_id = 5"));
+  }
+
+  @Test
+  @DisplayName("a change that leaves out the department is invalid; the stored one is not blanked")
+  void departmentIsRequired() {
+    Response response =
+        signedInAs(STUDENT_1)
+            .put(
+                RESERVATIONS + "/2",
+                updateBody(
+                    newOperationId(),
+                    "1",
+                    reservationInput().replace("\"department\":\"컴퓨터공학과\",", "")));
+
+    assertError(400, "invalid-argument", response);
+    assertEquals("화학공학과", dbValue("SELECT department FROM gown_reservations WHERE id = 2"));
+  }
+
+  @Test
   @DisplayName("RES-26 an operation ID another user used is permission-denied")
   void otherUsersOperationIdIsRejected() {
     String operationId = newOperationId();

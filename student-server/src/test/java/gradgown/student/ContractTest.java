@@ -216,6 +216,12 @@ class ContractTest extends ServerTest {
     assertError(400, "invalid-argument", notJson);
     assertKeys(notJson, "$", "code", "message", "operationId");
     assertError(400, "invalid-argument", student.put("/api/gown/reservations", "{}"));
+
+    // An error is JSON even for a request that says it does not accept JSON.
+    assertError(401, "unauthenticated", anonymous().getAccepting("/api/me", "text/plain"));
+    assertError(404, "not-found", anonymous().getAccepting("/api/announcements/999", "application/xml"));
+    // A preflight has no cookie. It must not fail on the session check.
+    assertTrue(anonymous().preflight("/api/gown/reservations").status() < 500);
     assertEquals("0", dbValue("SELECT COUNT(*) FROM gown_reservations WHERE user_id = 5"));
   }
 

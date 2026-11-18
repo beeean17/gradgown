@@ -61,7 +61,7 @@ public record ReservationInput(
     return new Valid(
         Check.text(name, 1, 60, "이름"),
         Check.text(studentId, 1, 30, "학번"),
-        Check.text(department, 0, 60, "학과"),
+        Check.text(department, 1, 60, "학과"),
         Check.phone(phone, "전화번호"),
         validSize,
         rentSlotId,

@@ -38,6 +38,32 @@ public final class HttpTestClient {
     return send(json(path).POST(body(json)));
   }
 
+  /** A GET that says which media type it accepts, for example {@code text/plain}. */
+  public Response getAccepting(String path, String accept) {
+    return send(HttpRequest.newBuilder(URI.create(baseUrl + path)).header("Accept", accept).GET());
+  }
+
+  /** A CORS preflight, as a browser on another origin sends before a POST. No cookie. */
+  public Response preflight(String path) {
+    try {
+      HttpResponse<String> response =
+          HttpClient.newHttpClient()
+              .send(
+                  HttpRequest.newBuilder(URI.create(baseUrl + path))
+                      .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
+                      .header("Origin", "http://localhost:5173")
+                      .header("Access-Control-Request-Method", "POST")
+                      .build(),
+                  HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+      return new Response(response.statusCode(), response.body());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException(e);
+    }
+  }
+
   /** A POST whose body is not declared as JSON. */
   public Response post(String path, String body, String contentType) {
     return send(

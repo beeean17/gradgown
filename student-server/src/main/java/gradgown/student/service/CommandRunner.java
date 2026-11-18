@@ -54,7 +54,15 @@ public class CommandRunner {
       String operationId, String domain, String action, long actorId, Supplier<Done> change) {
     String id = Check.operationId(operationId);
 
-    Optional<Result> earlier = begin(id, domain, action, actorId);
+    Optional<Result> earlier;
+    try {
+      earlier = begin(id, domain, action, actorId);
+    } catch (ApiException error) {
+      throw error;
+    } catch (RuntimeException failure) {
+      // Nothing was recorded, for example because the database is unreachable.
+      throw toApiError(failure).withOperationId(id);
+    }
     if (earlier.isPresent()) {
       return earlier.get();
     }
@@ -97,9 +105,16 @@ public class CommandRunner {
     return switch (entry.outcome()) {
       case "succeeded" ->
           Optional.of(new Result(id, entry.targetId(), statusAfter(action), true));
-      case "received" ->
-          throw new ApiException(ErrorCode.ABORTED, "같은 요청을 처리 중이거나 결과를 확인 중입니다.")
+      case "received" -> {
+        // Still running, or it died without an outcome. After two minutes it is taken as
+        // dead, so that the client stops retrying this ID, as in the original service.
+        if (entry.abandoned()) {
+          throw new ApiException(ErrorCode.FAILED_PRECONDITION, "이미 실패한 요청에 사용되었습니다.")
               .withOperationId(id);
+        }
+        throw new ApiException(ErrorCode.ABORTED, "같은 요청을 처리 중이거나 결과를 확인 중입니다.")
+            .withOperationId(id);
+      }
       default ->
           throw new ApiException(ErrorCode.FAILED_PRECONDITION, "이미 실패한 요청에 사용되었습니다.")
               .withOperationId(id);

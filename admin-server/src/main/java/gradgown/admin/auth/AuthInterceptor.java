@@ -20,6 +20,10 @@ public class AuthInterceptor implements HandlerInterceptor {
   @Override
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
+    if ("OPTIONS".equals(request.getMethod())) {
+      // A preflight carries no cookie and asks for no data.
+      return true;
+    }
     HttpSession session = request.getSession(false);
     Object attribute = session == null ? null : session.getAttribute(SessionUser.ATTRIBUTE);
     if (!(attribute instanceof SessionUser user)) {

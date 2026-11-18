@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.ErrorResponse;
@@ -23,7 +24,11 @@ public class ApiExceptionHandler {
 
   @ExceptionHandler(ApiException.class)
   public ResponseEntity<ErrorBody> apiError(ApiException error) {
-    return ResponseEntity.status(error.code().httpStatus()).body(ErrorBody.of(error));
+    // The content type is fixed here. Left to negotiation, a request that does not accept
+    // JSON would make writing the error itself fail.
+    return ResponseEntity.status(error.code().httpStatus())
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(ErrorBody.of(error));
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)

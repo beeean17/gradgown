@@ -116,6 +116,7 @@ class UserBoundaryTest extends ServerTest {
     assertError(403, "permission-denied", client.post("/api/auth/login", "{\"email\":\"admin01@example.com\"}"));
     assertError(403, "permission-denied", client.post("/api/auth/login", "{\"email\":\"master01@example.com\"}"));
     assertError(404, "not-found", client.post("/api/auth/login", "{\"email\":\"nobody@example.com\"}"));
+    assertError(400, "invalid-argument", client.post("/api/auth/login", "{}"));
     assertError(401, "unauthenticated", client.get("/api/me"));
 
     // The login screen offers the five students and no one else.

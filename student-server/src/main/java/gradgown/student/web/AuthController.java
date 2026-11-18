@@ -38,9 +38,12 @@ public class AuthController {
 
   @PostMapping("/api/auth/login")
   public MeView login(@RequestBody LoginRequest body, HttpServletRequest request) {
+    if (body.email() == null || body.email().isBlank()) {
+      throw new ApiException(ErrorCode.INVALID_ARGUMENT, "계정을 골라 주세요.");
+    }
     SessionUser user =
         users
-            .findByEmail(body.email() == null ? "" : body.email().strip())
+            .findByEmail(body.email().strip())
             .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "없는 계정입니다."));
     // Which server an account may sign in to is checked here, in code. What the account may do
     // after that is the database's business.

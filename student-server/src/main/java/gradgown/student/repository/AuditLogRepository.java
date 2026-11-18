@@ -11,7 +11,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class AuditLogRepository {
 
-  public record Entry(long actorId, String action, String outcome, Long targetId) {}
+  /**
+   * @param abandoned true when the row has been {@code received} for more than two minutes: the
+   *     request that claimed the ID never recorded an outcome
+   */
+  public record Entry(
+      long actorId, String action, String outcome, Long targetId, boolean abandoned) {}
 
   private final JdbcClient jdbc;
 
@@ -38,7 +43,13 @@ public class AuditLogRepository {
 
   public Optional<Entry> find(String operationId) {
     return jdbc.sql(
-            "SELECT actor_id, action, outcome, target_id FROM audit_logs WHERE operation_id = ?")
+            """
+            SELECT actor_id, action, outcome, target_id,
+                   outcome = 'received'
+                     AND created_at < CURRENT_TIMESTAMP(3) - INTERVAL 2 MINUTE AS abandoned
+            FROM audit_logs
+            WHERE operation_id = ?
+            """)
         .param(operationId)
         .query(
             (row, n) ->
@@ -46,7 +57,8 @@ public class AuditLogRepository {
                     row.getLong("actor_id"),
                     row.getString("action"),
                     row.getString("outcome"),
-                    row.getObject("target_id", Long.class)))
+                    row.getObject("target_id", Long.class),
+                    row.getBoolean("abandoned")))
         .optional();
   }
 
