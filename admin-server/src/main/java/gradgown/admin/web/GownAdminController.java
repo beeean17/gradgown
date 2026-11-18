@@ -3,6 +3,7 @@ package gradgown.admin.web;
 import gradgown.admin.repository.GownAdminRepository;
 import gradgown.admin.repository.GownAdminRepository.PeriodView;
 import gradgown.admin.repository.GownAdminRepository.ReservationRow;
+import gradgown.admin.repository.GownAdminRepository.SlotView;
 import gradgown.admin.repository.Page;
 import gradgown.core.error.ApiException;
 import gradgown.core.error.ErrorCode;
@@ -40,6 +41,12 @@ public class GownAdminController {
     return Json.orNull(gown.findCurrentPeriod());
   }
 
+  /** The timetable of a period. {@code periodId} defaults to the current period. */
+  @GetMapping("/api/admin/gown/slots")
+  public List<SlotView> slots(@RequestParam(required = false) String periodId) {
+    return gown.findSlots(periodOrCurrent(periodId));
+  }
+
   /** {@code periodId} defaults to the current period. */
   @GetMapping("/api/admin/gown/reservations")
   public Page<ReservationRow> reservations(
@@ -48,12 +55,12 @@ public class GownAdminController {
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit) {
-    String period = Page.filter(periodId);
-    if (period == null) {
-      period = gown.findCurrentPeriod().map(PeriodView::periodId).orElse("");
-    }
     return gown.findReservations(
-        period, Page.likePattern(q), Page.filter(status), cursorId(cursor), Page.size(limit));
+        periodOrCurrent(periodId),
+        Page.likePattern(q),
+        Page.filter(status),
+        cursorId(cursor),
+        Page.size(limit));
   }
 
   /**
@@ -71,6 +78,13 @@ public class GownAdminController {
       throw new ApiException(ErrorCode.NOT_FOUND, "회차를 찾을 수 없습니다.");
     }
     return Map.of("success", true, "periodId", periodId, "isOpen", open);
+  }
+
+  private String periodOrCurrent(String periodId) {
+    String period = Page.filter(periodId);
+    return period != null
+        ? period
+        : gown.findCurrentPeriod().map(PeriodView::periodId).orElse("");
   }
 
   private static Long cursorId(String cursor) {

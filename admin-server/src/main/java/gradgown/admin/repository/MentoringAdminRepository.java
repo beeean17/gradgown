@@ -2,6 +2,7 @@ package gradgown.admin.repository;
 
 import gradgown.core.rule.MentoringOptions;
 import gradgown.core.time.SeoulTime;
+import gradgown.core.view.MentoringSessionView;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -17,7 +18,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class MentoringAdminRepository {
 
-  /** An event with how many registrations it has. */
+  /**
+   * An event as the settings screen shows it, with how many registrations it has. {@code options}
+   * always has seven names; {@code sessions} are the two sessions in order.
+   */
   public record EventView(
       String eventId,
       boolean isOpen,
@@ -26,7 +30,12 @@ public class MentoringAdminRepository {
       String applyEndAt,
       String date,
       String location,
+      List<MentoringSessionView> sessions,
       List<String> options,
+      String intro,
+      List<String> notes,
+      String epicFolioUrl,
+      boolean isEpicFolioLinkOpen,
       int reservedCount) {}
 
   /** One registration in the admin list. The e-mail comes from users, not from the row. */
@@ -50,7 +59,7 @@ public class MentoringAdminRepository {
   /** How many reserved registrations chose an option in each session. Option 0 is "no choice". */
   public record OptionCount(int option, String name, int first, int second) {}
 
-  /** An event as its own query returns it, before the option names are added. */
+  /** An event as its own query returns it, before its sessions, options and notes are added. */
   private record EventRow(
       String id,
       boolean open,
@@ -59,12 +68,15 @@ public class MentoringAdminRepository {
       String applyEndAt,
       String date,
       String location,
+      String intro,
+      String epicFolioUrl,
+      boolean epicFolioLinkOpen,
       int reservedCount) {}
 
   private static final String SELECT_EVENT =
       """
       SELECT e.id, e.is_open, e.is_current, e.apply_starts_at, e.apply_ends_at,
-             e.event_date, e.location,
+             e.event_date, e.location, e.intro, e.epic_folio_url, e.is_epic_folio_link_open,
              (SELECT COUNT(*) FROM mentoring_registrations AS r
                WHERE r.event_id = e.id AND r.status = 'reserved') AS reserved_count
       FROM mentoring_events AS e
@@ -79,7 +91,7 @@ public class MentoringAdminRepository {
   public List<EventView> findEvents() {
     List<EventRow> rows =
         jdbc.sql(SELECT_EVENT + "ORDER BY e.id DESC").query(MentoringAdminRepository::event).list();
-    return rows.stream().map(this::withOptionNames).toList();
+    return rows.stream().map(this::withParts).toList();
   }
 
   public Optional<EventView> findCurrentEvent() {
@@ -87,15 +99,16 @@ public class MentoringAdminRepository {
         jdbc.sql(SELECT_EVENT + "WHERE e.is_current = TRUE")
             .query(MentoringAdminRepository::event)
             .optional();
-    return row.map(this::withOptionNames);
+    return row.map(this::withParts);
   }
 
   /**
-   * Adds the option names, read after the event query has finished and given its connection
-   * back. A query run from inside a row mapper would need a second connection while the first
-   * is still held, and enough simultaneous requests would then empty the pool for good.
+   * Adds the sessions, the option names and the notes, read after the event query has finished
+   * and given its connection back. A query run from inside a row mapper would need a second
+   * connection while the first is still held, and enough simultaneous requests would then empty
+   * the pool for good.
    */
-  private EventView withOptionNames(EventRow row) {
+  private EventView withParts(EventRow row) {
     return new EventView(
         row.id(),
         row.open(),
@@ -104,8 +117,48 @@ public class MentoringAdminRepository {
         row.applyEndAt(),
         row.date(),
         row.location(),
+        findSessions(row.id()),
         findOptionNames(row.id()),
+        row.intro(),
+        findNotes(row.id()),
+        row.epicFolioUrl(),
+        row.epicFolioLinkOpen(),
         row.reservedCount());
+  }
+
+  private List<MentoringSessionView> findSessions(String eventId) {
+    return jdbc.sql(
+            """
+            SELECT session_no, label, starts_at, ends_at
+            FROM mentoring_sessions
+            WHERE event_id = ?
+            ORDER BY session_no
+            """)
+        .param(eventId)
+        .query(
+            (row, n) ->
+                new MentoringSessionView(
+                    Integer.toString(row.getInt("session_no")),
+                    row.getString("label"),
+                    SeoulTime.iso(row.getObject("starts_at", LocalDateTime.class)),
+                    SeoulTime.iso(row.getObject("ends_at", LocalDateTime.class))))
+        .list();
+  }
+
+  /** The notes of an event in the array's order: JSON_TABLE turns the JSON array into rows. */
+  private List<String> findNotes(String eventId) {
+    return jdbc.sql(
+            """
+            SELECT note.body
+            FROM mentoring_events AS e,
+                 JSON_TABLE(e.notes, '$[*]'
+                            COLUMNS (ord FOR ORDINALITY, body VARCHAR(300) PATH '$')) AS note
+            WHERE e.id = ?
+            ORDER BY note.ord
+            """)
+        .param(eventId)
+        .query(String.class)
+        .list();
   }
 
   /** The names of options 1 to 7, in order. An option without a row or a name is "". */
@@ -226,6 +279,9 @@ public class MentoringAdminRepository {
         SeoulTime.iso(row.getObject("apply_ends_at", LocalDateTime.class)),
         SeoulTime.isoStartOfDay(row.getObject("event_date", LocalDate.class)),
         row.getString("location"),
+        row.getString("intro"),
+        row.getString("epic_folio_url"),
+        row.getBoolean("is_epic_folio_link_open"),
         row.getInt("reserved_count"));
   }
 

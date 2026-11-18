@@ -187,6 +187,72 @@ class AdminReadTest extends AdminServerTest {
   }
 
   @Test
+  @DisplayName("the timetable of a period lists its slots in time order, switched-off ones included")
+  void slots() {
+    HttpTestClient admin = signedInAs(ADMIN);
+
+    Response current = admin.get("/api/admin/gown/slots");
+    assertStatus(200, current);
+    assertEquals(
+        List.of("5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"),
+        read(current, "$[*].slotId"));
+    Map<String, Object> first = read(current, "$[0]");
+    assertEquals(Set.of("slotId", "periodId", "startsAt", "endsAt", "enabled"), first.keySet());
+    assertEquals("2027-02-15T10:00:00+09:00", first.get("startsAt"));
+    assertEquals("2027-02-15T10:30:00+09:00", first.get("endsAt"));
+    // Slot 16 is the one the seed switches off.
+    assertEquals(false, read(current, "$[11].enabled"));
+    assertEquals(true, read(current, "$[10].enabled"));
+
+    // Another period is another timetable, and an unknown one is empty.
+    assertEquals(
+        List.of("1", "2", "3", "4"),
+        read(admin.get("/api/admin/gown/slots?periodId=2026-08"), "$[*].slotId"));
+    assertEquals(List.of(), read(admin.get("/api/admin/gown/slots?periodId=2030-01"), "$[*]"));
+    assertError(401, "unauthenticated", anonymous().get("/api/admin/gown/slots"));
+  }
+
+  @Test
+  @DisplayName("an event carries what the settings screen shows: sessions, options, notes, the link")
+  void eventDetails() {
+    Response response = signedInAs(ADMIN).get("/api/admin/mentoring/events/current");
+
+    assertStatus(200, response);
+    Map<String, Object> event = read(response, "$");
+    assertEquals(
+        Set.of(
+            "eventId", "isOpen", "isCurrent", "applyStartAt", "applyEndAt", "date", "location",
+            "sessions", "options", "intro", "notes", "epicFolioUrl", "isEpicFolioLinkOpen",
+            "reservedCount"),
+        event.keySet());
+    assertEquals("2027-01", event.get("eventId"));
+    assertEquals("2027-01-13T00:00:00+09:00", event.get("date"));
+    assertEquals(List.of("1", "2"), read(response, "$.sessions[*].id"));
+    assertEquals(List.of("1차시", "2차시"), read(response, "$.sessions[*].label"));
+    assertEquals(
+        List.of("2027-01-13T15:00:00+09:00", "2027-01-13T16:00:00+09:00"),
+        read(response, "$.sessions[*].startsAt"));
+    assertEquals("2027-01-13T16:50:00+09:00", read(response, "$.sessions[1].endsAt"));
+    assertEquals("반도체 공정 엔지니어", read(response, "$.options[0]"));
+    assertEquals(7, ((List<?>) event.get("options")).size());
+    // The notes keep the order of the JSON array.
+    assertEquals(3, ((List<?>) event.get("notes")).size());
+    assertEquals(
+        "EPIC 점수를 받으려면 EPIC Folio에서 따로 신청해야 합니다.", read(response, "$.notes[2]"));
+    assertEquals("https://example.com/epic-folio", event.get("epicFolioUrl"));
+    assertEquals(true, event.get("isEpicFolioLinkOpen"));
+    // Reserved only: registration 4 is cancelled.
+    assertEquals(4, event.get("reservedCount"));
+
+    // The list has the same shape, one entry per event.
+    Response list = signedInAs(ADMIN).get("/api/admin/mentoring/events");
+    assertEquals(List.of("2027-01", "2026-05"), read(list, "$[*].eventId"));
+    assertEquals(List.of("차시마다 멘토 한 명을 고릅니다."), read(list, "$[1].notes"));
+    assertEquals(List.of(true, false), read(list, "$[*].isEpicFolioLinkOpen"));
+    assertEquals(List.of("1차시", "2차시"), read(list, "$[1].sessions[*].label"));
+  }
+
+  @Test
   @DisplayName("the registration list filters by search, status and each session's choice")
   void registrationList() {
     HttpTestClient admin = signedInAs(ADMIN);

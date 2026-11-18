@@ -50,6 +50,10 @@ public class GownAdminRepository {
       String modifiedAt,
       String version) {}
 
+  /** One slot of a period's timetable. A slot that is not enabled cannot be picked. */
+  public record SlotView(
+      String slotId, String periodId, String startsAt, String endsAt, boolean enabled) {}
+
   private static final String SELECT_PERIOD =
       """
       SELECT p.id, p.is_open, p.is_current,
@@ -75,6 +79,27 @@ public class GownAdminRepository {
     return jdbc.sql(SELECT_PERIOD + "WHERE p.is_current = TRUE")
         .query(GownAdminRepository::period)
         .optional();
+  }
+
+  /** The timetable of a period in time order, switched-off slots included. */
+  public List<SlotView> findSlots(String periodId) {
+    return jdbc.sql(
+            """
+            SELECT id, period_id, starts_at, ends_at, enabled
+            FROM gown_slots
+            WHERE period_id = ?
+            ORDER BY starts_at
+            """)
+        .param(periodId)
+        .query(
+            (row, n) ->
+                new SlotView(
+                    Long.toString(row.getLong("id")),
+                    row.getString("period_id"),
+                    SeoulTime.iso(row.getObject("starts_at", LocalDateTime.class)),
+                    SeoulTime.iso(row.getObject("ends_at", LocalDateTime.class)),
+                    row.getBoolean("enabled")))
+        .list();
   }
 
   /**
