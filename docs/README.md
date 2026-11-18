@@ -19,7 +19,7 @@
 |---|---|---|
 | 테이블 11개, 공지 뷰, 계정 셋과 `GRANT`, 시드 데이터 | `db/init/*.sql` | MySQL 8.4.13에서 적용됨 |
 | 개발용 MySQL | `compose.yaml`, `db/conf/gradgown.cnf` | 띄워서 확인함. `docker compose up -d --wait` |
-| 스키마·권한 테스트 (동적 계열 1·2층) | `db/src/test/` | 로컬에서 152개 통과. `./gradlew :db:test` |
+| 스키마·권한 테스트 (동적 계열 1·2층) | `db/src/test/` | 로컬에서 167개 통과. `./gradlew :db:test` |
 | CI | — | 워크플로 없음 |
 
 DDL의 세부는 2026-11-18에 확정했다([data-model.md](./decisions/data-model.md)의 "DDL에서 정한 것").
@@ -49,7 +49,7 @@ DDL의 세부는 2026-11-18에 확정했다([data-model.md](./decisions/data-mod
 | 관리자용 서버는 로그인한 사람의 등급으로 DB 계정을 고른다. 관리자의 쓰기는 MySQL이 거부한다 | 확정 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | 관리자 쪽의 쓰기는 마스터의 접수 열기·닫기 하나다 | 확정 | [scope.md](./decisions/scope.md) |
 | 테스터 권한은 넣지 않는다 | 확정 | [scope.md](./decisions/scope.md) |
-| 학생 DB 계정의 `UPDATE`를 컬럼 단위로 좁힌다 | 확정 (미반영) | [db-privileges.md](./decisions/db-privileges.md) |
+| 학생 DB 계정의 `UPDATE`를 컬럼 단위로 좁힌다 | 확정 | [db-privileges.md](./decisions/db-privileges.md) |
 | 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다 | 확정 (권한 표는 초안) | [db-privileges.md](./decisions/db-privileges.md) |
 | CI는 GitHub Actions로 돌린다 | 확정 (작업 구성은 제안) | [ci.md](./decisions/ci.md) |
 | Firestore 구조를 테이블 11개로 옮긴다 | 잠정 (DDL의 세부는 확정) | [data-model.md](./decisions/data-model.md) |

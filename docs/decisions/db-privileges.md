@@ -1,6 +1,6 @@
 # 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다
 
-- 상태: 확정 (2026-11-14). 권한을 주는 방식은 2026-11-16에 확정했다. 학생 계정의 `UPDATE`를 컬럼 단위로 좁히는 것은 2026-11-18에 확정했고 아직 `GRANT` 문에 반영하지 않았다. 아래 권한 표는 초안이다. `GRANT` 문을 [`db/init/03-accounts.sql`](../../db/init/03-accounts.sql)에 썼고, MySQL 8.4.13에서 표대로 동작하는 것을 테스트로 확인했다(2026-11-16)
+- 상태: 확정 (2026-11-14). 권한을 주는 방식은 2026-11-16에 확정했다. 학생 계정의 `UPDATE`를 컬럼 단위로 좁히는 것은 2026-11-18에 확정하고 반영했다. 아래 권한 표는 초안이다. `GRANT` 문을 [`db/init/03-accounts.sql`](../../db/init/03-accounts.sql)에 썼고, MySQL 8.4.13에서 표대로 동작하는 것을 테스트로 확인했다(2026-11-16, 좁힌 뒤 2026-11-18에 다시 확인)
 - 관련: [admin-server-split.md](./admin-server-split.md), [data-model.md](./data-model.md), [test-login.md](./test-login.md), [evaluation.md](./evaluation.md)
 
 ## 결정
@@ -24,12 +24,12 @@ MySQL 권한은 DB 계정 단위다. 테이블과 컬럼 단위로는 제한할 
 |---|---|---|---|
 | `users` | `SELECT`, 마지막 로그인 시각 컬럼만 `UPDATE` | `SELECT` | 전체 |
 | `gown_periods`, `gown_slots` | `SELECT` | `SELECT` | 전체 |
-| `gown_reservations` | `SELECT`, `INSERT`, `UPDATE` | `SELECT` | 전체 |
+| `gown_reservations` | `SELECT`, `INSERT`, 일부 컬럼만 `UPDATE` | `SELECT` | 전체 |
 | `mentoring_events`, `mentoring_sessions`, `mentoring_options` | `SELECT` | `SELECT` | 전체 |
-| `mentoring_registrations` | `SELECT`, `INSERT`, `UPDATE` | `SELECT` | 전체 |
+| `mentoring_registrations` | `SELECT`, `INSERT`, 일부 컬럼만 `UPDATE` | `SELECT` | 전체 |
 | `announcements` | 없음. 노출 중인 공지만 보이는 뷰에 `SELECT` | `SELECT` | 전체 |
 | `faqs` | 없음 | `SELECT` | 전체 |
-| `audit_logs` | `SELECT`, `INSERT`, `UPDATE` | `SELECT` | 전체 |
+| `audit_logs` | `SELECT`, `INSERT`, 일부 컬럼만 `UPDATE` | `SELECT` | 전체 |
 
 "전체"는 `SELECT`, `INSERT`, `UPDATE`, `DELETE`다. 테이블 구조를 바꾸는 권한은 어느 계정에도 주지 않는다.
 
@@ -77,29 +77,30 @@ MySQL 권한은 DB 계정 단위다. 테이블과 컬럼 단위로는 제한할 
 - 사용자 간 경계는 DB가 지켜 주지 않는다. Firestore Security Rules는 사용자 단위로 읽기를 막아 주었으므로, 이 부분은 이전하면서 서버 코드의 책임으로 넘어온다. 보고서의 한계에 적는다.
 - 학생 계정은 예약 테이블의 모든 행을 읽고 고칠 권한을 가진다. 학생용 서버의 쿼리가 틀리면 다른 학생의 예약에 닿을 수 있다.
 
-## 학생 계정의 `UPDATE`를 컬럼 단위로 좁힌다 (확정, 2026-11-18. 아직 반영하지 않음)
+## 학생 계정의 `UPDATE`를 컬럼 단위로 좁힌다 (확정, 2026-11-18)
 
-학생 계정은 학생용 서버가 실제로 바꾸는 컬럼만 `UPDATE`할 수 있게 한다. 지금 [`db/init/03-accounts.sql`](../../db/init/03-accounts.sql)은 테이블 단위로 주고 있어서, 위 권한 표와 `GRANT` 문은 아직 이 결정을 반영하지 않았다.
+학생 계정은 학생용 서버가 실제로 바꾸는 컬럼만 `UPDATE`할 수 있다. [`db/init/03-accounts.sql`](../../db/init/03-accounts.sql)에 반영했다.
 
-| 테이블 | `UPDATE`할 수 있는 컬럼 (예정) | 고칠 수 없는 컬럼 |
+| 테이블 | `UPDATE`할 수 있는 컬럼 | 고칠 수 없는 컬럼 |
 |---|---|---|
-| `gown_reservations` | `status`, `rent_slot_id`, `return_slot_id`, `name`, `student_id`, `department`, `phone`, `size`, `is_proxy`, `proxy_name`, `proxy_phone`, `version` | `id`, `user_id`, `period_id`, `created_by`, `created_at` |
-| `mentoring_registrations` | `status`, `first_option_no`, `second_option_no`, `name`, `department`, `student_id`, `grade`, `phone`, `version` | `id`, `user_id`, `event_id`, `created_by`, `created_at` |
+| `gown_reservations` | `status`, `rent_slot_id`, `return_slot_id`, `name`, `student_id`, `department`, `phone`, `size`, `is_proxy`, `proxy_name`, `proxy_phone`, `version` | `id`, `user_id`, `period_id`, `created_by`, `created_at`, `updated_at` |
+| `mentoring_registrations` | `status`, `first_option_no`, `second_option_no`, `name`, `department`, `student_id`, `grade`, `phone`, `version` | `id`, `user_id`, `event_id`, `created_by`, `created_at`, `updated_at` |
 | `audit_logs` | `outcome`, `failure_kind`, `error_code`, `target_id`, `completed_at` | `operation_id`, `domain`, `action`, `actor_id`, `created_at` |
 
 - 학생용 서버에 버그가 있어도 예약의 주인이나 회차를 바꿀 수 없다는 것을 DB가 보장한다. "한계"에 적은 위험(학생용 서버의 쿼리가 틀리면 다른 학생의 예약에 닿는다) 가운데 고치는 쪽의 일부를 줄인다. 읽는 쪽은 그대로 서버 코드의 책임이다.
 - 감사 로그는 넣은 뒤에 누가, 무엇을 요청했는지를 고칠 수 없게 된다.
 
-반영할 때 확인할 것:
+반영하면서 확인한 것(권한 테스트에 15건을 더했다):
 
-- `updated_at`은 `ON UPDATE CURRENT_TIMESTAMP`로 저절로 바뀐다. 이 자동 갱신에 컬럼 권한이 필요한지. 필요하면 `updated_at`을 허용 목록에 넣는다.
-- 권한 테스트(2층)에 "고칠 수 없는 컬럼을 고치면 오류 1143"을 테이블마다 더한다.
+- 고칠 수 없는 컬럼을 `UPDATE`하면 오류 1143으로 거부된다.
+- `updated_at`은 `ON UPDATE CURRENT_TIMESTAMP`로 저절로 바뀐다. **이 자동 갱신에는 컬럼 권한이 필요 없다.** 학생 계정은 `updated_at`을 직접 쓸 수 없지만(1143), 다른 컬럼을 고치면 값이 갱신된다. 그래서 수정 시각을 학생용 서버가 꾸며 낼 수 없다.
+- `version = version + 1`처럼 컬럼을 읽어서 쓰는 문장은 그 컬럼의 `SELECT` 권한도 쓴다. 학생 계정은 테이블 `SELECT`가 있어서 된다.
 
 관리자용 서버가 조회 계정과 마스터 계정을 골라 쓰는 방식도 2026-11-18에 정했다. 로그인한 사람의 등급으로 고른다([admin-server-split.md](./admin-server-split.md)).
 
 ## 실행해서 확인한 것 (2026-11-16)
 
-[`PrivilegeTest`](../../db/src/test/java/gradgown/db/PrivilegeTest.java) 109개가 MySQL 8.4.13 컨테이너에서 모두 통과했다([동적 계열](../testing/dynamic.md) 2층). 계정별로 접속해서 권한 표의 칸을 하나씩 본다.
+[`PrivilegeTest`](../../db/src/test/java/gradgown/db/PrivilegeTest.java) 124개가 MySQL 8.4.13 컨테이너에서 모두 통과했다([동적 계열](../testing/dynamic.md) 2층). 계정별로 접속해서 권한 표의 칸을 하나씩 본다.
 
 | 확인한 것 | 결과 |
 |---|---|

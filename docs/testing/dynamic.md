@@ -1,6 +1,6 @@
 # 동적 계열
 
-- 상태: 제안 (2026-11-14). 1·2층의 도구는 2026-11-16에 확정했고, 테스트 152개가 MySQL 8.4.13에서 통과한다. 나머지 층의 목록은 초안이다
+- 상태: 제안 (2026-11-14). 1·2층의 도구는 2026-11-16에 확정했고, 테스트 167개가 MySQL 8.4.13에서 통과한다. 나머지 층의 목록은 초안이다
 - 관련: [테스트 개요](./README.md), [static.md](./static.md), [data-model.md](../decisions/data-model.md), [db-privileges.md](../decisions/db-privileges.md), [evaluation.md](../decisions/evaluation.md), [API 계약](../contracts/web-api.md)
 
 실제로 실행해서 결과를 보는 검사다. 층이 일곱 개다.
@@ -19,7 +19,7 @@
 
 ## 1·2층의 구현 (2026-11-16)
 
-**JUnit과 Testcontainers로 쓴다(확정).** 코드는 `db/src/test/java/gradgown/db/`에 있다. 2026-11-16에 로컬에서 152개가 모두 통과했다(스키마 42, 권한 109, 구성 1. MySQL 8.4.13). CI에서는 아직 돌리지 않았다. 워크플로가 없다.
+**JUnit과 Testcontainers로 쓴다(확정).** 코드는 `db/src/test/java/gradgown/db/`에 있다. 2026-11-18에 로컬에서 167개가 모두 통과했다(스키마 42, 권한 124, 구성 1. MySQL 8.4.13). CI에서는 아직 돌리지 않았다. 워크플로가 없다.
 
 | 파일 | 내용 |
 |---|---|
@@ -73,7 +73,7 @@
 
 | 계정 | 거부되어야 하는 것 | 허용되어야 하는 것 |
 |---|---|---|
-| 학생 | 예약·신청 `DELETE`. 회차·슬롯·선택지 쓰기. `announcements`와 `faqs` 테이블 직접 조회. `users`의 마지막 로그인 시각 외 컬럼 `UPDATE` | 예약·신청 `SELECT`, `INSERT`, `UPDATE`. 공지 뷰 조회. `audit_logs` 기록 |
+| 학생 | 예약·신청 `DELETE`. 회차·슬롯·선택지 쓰기. `announcements`와 `faqs` 테이블 직접 조회. `users`의 마지막 로그인 시각 외 컬럼 `UPDATE`. 예약·신청·감사 로그의 주인, 회차·행사, 생성·수정 시각 컬럼 `UPDATE` | 예약·신청 `SELECT`, `INSERT`, `UPDATE`. 공지 뷰 조회. `audit_logs` 기록 |
 | 관리자 | 모든 테이블의 `INSERT`, `UPDATE`, `DELETE` | 모든 테이블 `SELECT` |
 | 마스터 | 테이블 구조 변경 | 모든 테이블 읽기와 쓰기 |
 
