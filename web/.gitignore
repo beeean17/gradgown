@@ -1,0 +1,23 @@
+# 빌드
+node_modules
+dist
+dist-ssr
+*.tsbuildinfo
+
+# `wrangler pages dev` 상태
+.wrangler
+
+# 로그
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 환경 변수: 템플릿은 커밋하고, 실제 값은 *.local이나 호스트 빌드 환경에 둔다.
+.env
+.env.*
+*.local
+!.env.example
+!.env.emulator

@@ -1,0 +1,24 @@
+/*
+ * Element-level base. App-shell layout only — Astryx's reset owns typography
+ * and component styling, so nothing here should set colours or spacing.
+ */
+html,
+body,
+#root {
+  min-height: 100dvh;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * The one colour here: the canvas behind the app. It shows wherever the shell
+ * doesn't — overscroll, the safe areas of a home-screen web app — and
+ * ThemeModeProvider copies it into `theme-color` for that app's status bar.
+ * A token, so it follows the picked mode instead of the phone's setting.
+ */
+html {
+  background-color: var(--color-background-surface);
+}

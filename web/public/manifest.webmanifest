@@ -1,0 +1,24 @@
+{
+  "id": "/",
+  "name": "서울과학기술대학교 총졸업준비위원회",
+  "short_name": "총졸준위",
+  "description": "서울과학기술대학교 총졸업준비위원회 학위복 대여와 St:talk 신청",
+  "lang": "ko",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/icons/grad42-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/grad42-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "name": "grad42-admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5174 --strictPort",
+    "dev:emulator": "node scripts/dev-emulator.mjs",
+    "build": "tsc --noEmit && vite build && node scripts/check-build.mjs",
+    "verify:deploy": "node --experimental-strip-types scripts/check-deploy.mjs",
+    "preview": "vite preview --host 127.0.0.1 --port 4174",
+    "lint": "oxlint src tests",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:server": "node --test ../firebase/functions/test/",
+    "test:integration": "node scripts/emulators.mjs test",
+    "emulators": "node scripts/emulators.mjs start",
+    "seed:emulators": "node scripts/seed-emulators.mjs"
+  },
+  "dependencies": {
+    "@astryxdesign/core": "0.2.0",
+    "@astryxdesign/theme-neutral": "0.2.0",
+    "fflate": "0.8.2",
+    "firebase": "12.17.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-markdown": "10.1.0",
+    "react-router-dom": "7.18.2"
+  },
+  "devDependencies": {
+    "@astryxdesign/cli": "0.2.0",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.4",
+    "oxlint": "1.75.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.2",
+    "vite": "8.2.0"
+  }
+}

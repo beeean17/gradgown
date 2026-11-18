@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/grad42-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/grad42-16.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/grad42-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="application-name" content="총졸준위" />
+    <meta name="apple-mobile-web-app-title" content="총졸준위" />
+    <title>서울과학기술대학교 총졸업준비위원회</title>
+    <!-- The reservation round for the home screen, fetched with the bundle so it
+         is in hand when the app starts (web/functions/api/schedule.js). Must
+         match the app's fetch('/api/schedule') to be reused, not refetched. -->
+    <link rel="preload" href="/api/schedule" as="fetch" crossorigin="anonymous" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

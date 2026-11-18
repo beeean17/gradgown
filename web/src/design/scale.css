@@ -1,0 +1,28 @@
+/*
+ * THE global type/space scale. Every Astryx token is `rem` — `--font-size-*`,
+ * `--radius-*`, and `--spacing` (0.25rem) which the whole spacing scale derives
+ * from — and Tailwind v4's utilities share those same tokens. So this one
+ * declaration is the proportional scale for the entire app: every component on
+ * every route resizes with the viewport from here, with no per-screen rules.
+ *
+ * Written in `rem + vw`, never px. Inside `html`, `rem` resolves against the
+ * BROWSER's font size, so a visitor who has set a larger default still gets it
+ * — the viewport scales their preference instead of overriding it. A bare `vw`
+ * scale would silently discard that setting.
+ *
+ * The floor holds everything at today's sizing up to ~1440px, so laptops,
+ * tablets and phones are untouched; past that the UI grows with the screen
+ * rather than stranding it in a column of whitespace.
+ *   ≤1440px → 16px   1920px → 18px   ≥2160px → 18px
+ *
+ * The ceiling is 1.125rem for a reason, and it is a constraint of the design
+ * system rather than a taste call: Astryx's typography tokens are `rem`, but
+ * the control geometry inside astryx.css (button `block-size: 32px`, its
+ * padding, input heights) is hard px. Type therefore scales and control boxes
+ * do not, so pushing the root much past this starts crowding label text inside
+ * buttons and fields. Raising it means overriding those component internals
+ * first — see the note in HeroSection about sizing that can't come from here.
+ */
+html {
+  font-size: clamp(1rem, calc(0.625rem + 0.4167vw), 1.125rem);
+}

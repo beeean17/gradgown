@@ -1,0 +1,15 @@
+/*
+ * Title bar. The AppShell wrappers inherit the shared bar's 64px budget so the
+ * global and reservation variants occupy the same vertical frame.
+ *
+ * The descendants are matched structurally rather than by class: the wrapper
+ * between the layout header and the nav is a StyleX-generated class (`x9f619`
+ * today) whose name is a build artifact and will change.
+ */
+.astryx-app-shell-header {
+  block-size: var(--title-bar-h);
+}
+.astryx-app-shell-header > *,
+.astryx-app-shell-header > * > * {
+  block-size: 100%;
+}

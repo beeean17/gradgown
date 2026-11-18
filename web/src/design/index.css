@@ -1,0 +1,45 @@
+/*
+ * THE design system entry. `main.tsx` imports this one file; everything visual
+ * that is global to the app is reachable from here.
+ *
+ *   scale.css       how the whole UI resizes with the window
+ *   tokens.css      custom design tokens (sizes, brand colours)
+ *   base.css        element-level base layout
+ *   components.css  overrides of Astryx component geometry
+ *   motion.css      shared entrance/hover animations
+ *   theme.ts        the typed Astryx theme — brand colour, fonts, component
+ *                   variants. Not CSS: it is applied in React by <Theme>, so
+ *                   it cannot be imported here. See app/App.tsx.
+ *
+ * Feature-specific CSS does NOT belong in this folder — the landing's deck and
+ * mobile shell live in features/landing/landing.css, imported by the feature.
+ *
+ * LAYER ORDER matters and is declared once, below. Astryx sits between
+ * Tailwind's base/theme and its utilities, so component styles beat resets
+ * while Tailwind utilities still beat components. Our own files are
+ * deliberately UNLAYERED: unlayered rules outrank every layer, which is what
+ * lets components.css override Astryx's internals.
+ */
+@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
+
+/* Vendor — Tailwind + Astryx, in layer order. */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+@import '@astryxdesign/theme-neutral/theme.css';
+@import '@astryxdesign/core/tailwind-theme.css';
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Fonts — Noto Sans + Noto Sans KR, self-hosted. The same Google Fonts files
+   and unicode-range slices, served from our origin: no render-blocking
+   stylesheet and no extra connections to fonts.googleapis/gstatic. */
+@import '@fontsource-variable/noto-sans';
+@import '@fontsource-variable/noto-sans-kr';
+
+/* Ours — after the vendor layers, unlayered, so these win. */
+@import './tokens.css';
+@import './scale.css';
+@import './base.css';
+@import './components.css';
+@import './motion.css';

@@ -1,0 +1,112 @@
+/*
+ * Custom design tokens — the values Astryx's typed theme can't hold.
+ *
+ * Brand colour and typography go through `theme.ts` (typed, validated); this
+ * file is for tokens outside that map. Nothing here may be a raw value at a
+ * call site: components reference these names, never the literals.
+ */
+:root {
+  /* --- Sizing ---------------------------------------------------------- */
+
+  /*
+   * Title bar height. Astryx hard-codes the shell header to `block-size: 48px`
+   * — one of the px internals the global rem scale can't reach — so it stayed
+   * thin while everything inside it grew. Set in `rem` so the bar tracks the
+   * scale like the rest of the UI (see scale.css).
+   *
+   * One token because two elements have to agree on it: the shell header on
+   * routed screens, and the landing's own mobile header, which replaces the
+   * shell header below 640px.
+   */
+  --title-bar-h: 4rem;
+
+  /*
+   * The wide-screen frame every page and flow step shares, so a card sits in
+   * the same place and at the same size from the tab to the last step:
+   * content at most --page-max-w (padding outside it), and where a page has a
+   * side card, the card column --rail-w wide at --rail-gap from the body.
+   */
+  --page-max-w: 75rem;
+  --rail-w: 25rem;
+  --rail-gap: 4rem;
+
+  /* The fixed action rail: the side card's width. */
+  --reservation-actions-max-w: var(--rail-w);
+
+  /* --- Colour ---------------------------------------------------------- */
+
+  /*
+   * "Point" — the logo's tassel yellow. A custom token, NOT an override of an
+   * Astryx `--color-*`. For highlight marks only (pinned badges, step
+   * progress, small accents); never body text, where it fails contrast. Pair
+   * fills with `--color-point-contrast`.
+   * The structural brand colour is `--color-accent`, set in theme.ts.
+   */
+  --color-point: #fdc953;
+  --color-point-strong: #e0a800;
+  --color-point-contrast: #3d2f00;
+
+  /*
+   * Solid action fills stay saturated in both themes. Keep these separate
+   * from accent/error text tokens, which need lighter tones on dark surfaces.
+   * Pair with --color-on-dark, including the built-in hover/pressed overlays.
+   */
+  --color-button-primary: #3858c6;
+  --color-button-destructive: #ce263c;
+
+  /*
+   * Reservation semantic surfaces. In light mode the tint is mixed into the
+   * card surface instead of transparency, so the cool page background does
+   * not muddy red and yellow into the same grey. Dark mode preserves the
+   * existing translucent depth.
+   */
+  --color-reservation-danger-surface: light-dark(
+    color-mix(in srgb, var(--color-error) 6%, var(--color-background-card)),
+    color-mix(in srgb, var(--color-error) 5%, transparent)
+  );
+  --color-reservation-danger-border: light-dark(
+    color-mix(in srgb, var(--color-border-red) 62%, var(--color-border)),
+    color-mix(in srgb, var(--color-border-red) 72%, transparent)
+  );
+  --color-reservation-warning-surface: light-dark(
+    color-mix(in srgb, var(--color-warning) 8%, var(--color-background-card)),
+    color-mix(in srgb, var(--color-warning) 5%, transparent)
+  );
+  --color-reservation-warning-border: light-dark(
+    color-mix(in srgb, var(--color-border-yellow) 68%, var(--color-border)),
+    var(--color-border-yellow)
+  );
+  --color-reservation-neutral-surface: light-dark(
+    color-mix(in srgb, var(--color-background-card) 70%, var(--color-background-body)),
+    var(--color-background-card)
+  );
+  --color-reservation-neutral-border: light-dark(
+    color-mix(in srgb, var(--color-border-emphasized) 58%, var(--color-border)),
+    var(--color-border-emphasized)
+  );
+  /*
+   * "Ground" — the dark floor the landing footer and the full-screen mobile
+   * menu sit on. Dark in BOTH themes: it is the page's floor, not a surface
+   * that flips.
+   *
+   * This cannot be `--color-background-inverted`: that token inverts, so in
+   * dark mode it resolves to near-white and pairs with `--color-on-dark`
+   * (#fff) — white text on a white panel. Anything over the ground takes its
+   * contrast from `--color-on-ground`, never from `--color-on-dark`.
+   */
+  --color-ground: light-dark(#101018, #08080e);
+  --color-on-ground: #f1f0f7;
+}
+
+/*
+ * Tailwind's own theme namespace. `--breakpoint-*` here registers a variant,
+ * which a plain `:root` custom property cannot do.
+ *
+ * `desk` is the reservation flow's breakpoint: its terms step is designed as
+ * two panes — a reading column beside a summary — which needs more room than a
+ * phone and less than Tailwind's `lg`. Named so the flow's components write
+ * `desk:` instead of repeating an arbitrary `min-[900px]:` everywhere.
+ */
+@theme {
+  --breakpoint-desk: 900px;
+}

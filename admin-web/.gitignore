@@ -1,0 +1,17 @@
+# 빌드
+node_modules/
+dist/
+*.tsbuildinfo
+
+# 브라우저 QA 결과·스크린샷 (scripts/browser-qa.mjs)
+artifacts/
+
+# 에뮬레이터 저장 데이터 (npm run emulators가 종료 시 내보냄)
+.emulator-data/
+
+# 로그
+*.log
+
+# 환경 변수: 예시만 커밋한다.
+.env*
+!.env.example

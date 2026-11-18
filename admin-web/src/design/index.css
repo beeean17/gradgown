@@ -1,0 +1,23 @@
+@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+@import '@astryxdesign/theme-neutral/theme.css';
+@import '@astryxdesign/core/tailwind-theme.css';
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Region budgets: nav 260, editor 640; only named layout tokens in UI. */
+:root {
+  --admin-editor-width: 40rem;
+  --admin-auth-width: 28rem;
+  --admin-content-width: 90rem;
+  --admin-date-width: 13rem;
+  --admin-time-width: 7rem;
+}
+html, body, #root { min-height: 100%; margin: 0; }
+body { background: var(--color-background-surface); color: var(--color-text-primary); }
+* { box-sizing: border-box; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto; }
+}

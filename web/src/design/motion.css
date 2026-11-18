@@ -1,0 +1,65 @@
+/*
+ * Motion utilities, built on Astryx motion tokens (--duration-*, --ease-standard).
+ * ALL animation lives inside the no-preference media query, so users with
+ * "reduce motion" get a fully-visible, static UI (no base opacity:0 outside).
+ *   .gx-rise    — fade + slide up on mount (page/section entrance)
+ *   .gx-pop     — scale + fade in (success/result cards)
+ *   .gx-stagger — children rise in sequence (lists, card grids)
+ *   .gx-lift    — hover lift + shadow for interactive cards
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes gx-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes gx-pop {
+    0% { opacity: 0; transform: scale(0.96); }
+    60% { opacity: 1; }
+    100% { opacity: 1; transform: none; }
+  }
+
+  /*
+   * `backwards`, never `both`. A finished `both` animation keeps applying its
+   * final keyframe, and an animated `transform: none` resolves to the identity
+   * MATRIX rather than to `none` — which still makes the element a containing
+   * block for `position: fixed` descendants. PageTransition wraps every route
+   * in .gx-rise, so `both` here sized every fixed overlay in the app against
+   * the page instead of the viewport. `backwards` holds the from-state until
+   * the animation starts and then hands the element back to its own styles,
+   * which is the same end state these keyframes were animating toward anyway.
+   */
+  .gx-rise {
+    animation: gx-rise var(--duration-medium, 410ms) var(--ease-standard, cubic-bezier(0.24, 1, 0.4, 1)) backwards;
+  }
+  .gx-pop {
+    animation: gx-pop var(--duration-medium-max, 550ms) var(--ease-standard, cubic-bezier(0.24, 1, 0.4, 1)) backwards;
+  }
+
+  .gx-stagger > * {
+    animation: gx-rise var(--duration-medium, 410ms) var(--ease-standard, cubic-bezier(0.24, 1, 0.4, 1)) backwards;
+  }
+  .gx-stagger > *:nth-child(1) { animation-delay: 40ms; }
+  .gx-stagger > *:nth-child(2) { animation-delay: 100ms; }
+  .gx-stagger > *:nth-child(3) { animation-delay: 160ms; }
+  .gx-stagger > *:nth-child(4) { animation-delay: 220ms; }
+  .gx-stagger > *:nth-child(5) { animation-delay: 280ms; }
+  .gx-stagger > *:nth-child(6) { animation-delay: 340ms; }
+
+  .gx-lift {
+    transition:
+      transform var(--duration-fast, 175ms) var(--ease-standard, cubic-bezier(0.24, 1, 0.4, 1)),
+      box-shadow var(--duration-fast, 175ms) var(--ease-standard, cubic-bezier(0.24, 1, 0.4, 1));
+    will-change: transform;
+  }
+  /* A brand-tinted lift rather than a neutral drop shadow — mixed from the
+   * accent so it follows the theme (and any future rebrand) instead of pinning
+   * one blue. Not `--shadow-*`: those are surface elevations, this is hover. */
+  .gx-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px -14px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  }
+  .gx-lift:active {
+    transform: translateY(-1px);
+    transition-duration: var(--duration-fast-min, 130ms);
+  }
+}
