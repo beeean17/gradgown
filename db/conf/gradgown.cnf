@@ -1,0 +1,14 @@
+# Server settings shared by the development container (compose.yaml) and the
+# test container (db/src/test). Mounted at /etc/mysql/conf.d/gradgown.cnf.
+
+[mysqld]
+# The service runs in Seoul only. TIMESTAMP columns store instants; this sets
+# the zone they are shown in and the zone CURRENT_TIMESTAMP is read in.
+default-time-zone = '+09:00'
+character-set-server = utf8mb4
+collation-server = utf8mb4_0900_ai_ci
+
+[client]
+# The command-line client inside the container has no locale and would fall
+# back to latin1, which shows Korean text as question marks.
+default-character-set = utf8mb4
