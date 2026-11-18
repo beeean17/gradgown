@@ -3,3 +3,7 @@ docs/course-materials/
 
 # macOS
 .DS_Store
+
+# Gradle
+.gradle/
+build/
