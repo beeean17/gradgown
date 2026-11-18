@@ -5,6 +5,7 @@ import gradgown.core.error.ErrorCode;
 import gradgown.core.error.MySqlError;
 import gradgown.core.view.ErrorBody;
 import jakarta.servlet.ServletException;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
@@ -34,6 +35,12 @@ public class ApiExceptionHandler {
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ErrorBody> unreadableBody(HttpMessageNotReadableException error) {
     return apiError(new ApiException(ErrorCode.INVALID_ARGUMENT, "요청 본문을 확인해 주세요."));
+  }
+
+  /** A query string that cannot be decoded, for example {@code q=%zz}. */
+  @ExceptionHandler(InvalidParameterException.class)
+  public ResponseEntity<ErrorBody> undecodableParameter(InvalidParameterException error) {
+    return apiError(new ApiException(ErrorCode.INVALID_ARGUMENT, "요청 값을 확인해 주세요."));
   }
 
   /** A query or path parameter of the wrong type, for example {@code limit=abc}. */

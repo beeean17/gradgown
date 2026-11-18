@@ -90,6 +90,25 @@ class AdminRoleTest extends AdminServerTest {
     assertError(404, "not-found", master.put("/api/admin/gown/periods/2030-01/open", "{\"isOpen\":true}"));
     assertError(404, "not-found", master.put("/api/admin/mentoring/events/2030-01/open", "{\"isOpen\":false}"));
     assertError(400, "invalid-argument", master.put(GOWN_OPEN, "{}"));
+    // Only a JSON boolean. "false" and 0 were once converted and written.
+    assertError(400, "invalid-argument", master.put(GOWN_OPEN, "{\"isOpen\":\"false\"}"));
+    assertError(400, "invalid-argument", master.put(GOWN_OPEN, "{\"isOpen\":0}"));
+    assertError(400, "invalid-argument", master.put(EVENT_OPEN, "{\"isOpen\":\"false\"}"));
+    assertEquals("1", dbValue("SELECT is_open FROM gown_periods WHERE id = '2027-02'"));
+    assertEquals("1", dbValue("SELECT is_open FROM mentoring_events WHERE id = '2027-01'"));
+  }
+
+  @Test
+  @DisplayName("a write is answered with its real result whatever the request says it accepts")
+  void acceptHeaderDoesNotChangeTheAnswer() {
+    HttpTestClient master = signedInAs(MASTER);
+
+    Response closed = master.putAccepting(GOWN_OPEN, "{\"isOpen\":false}", "text/html");
+
+    assertStatus(200, closed);
+    assertEquals(false, read(closed, "$.isOpen"));
+    assertEquals("0", dbValue("SELECT is_open FROM gown_periods WHERE id = '2027-02'"));
+    assertStatus(200, master.getAccepting("/api/admin/gown/periods", "text/plain"));
   }
 
   @Test

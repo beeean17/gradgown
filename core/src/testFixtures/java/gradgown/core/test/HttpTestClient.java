@@ -43,6 +43,11 @@ public final class HttpTestClient {
     return send(HttpRequest.newBuilder(URI.create(baseUrl + path)).header("Accept", accept).GET());
   }
 
+  /** A PUT that says which media type it accepts. */
+  public Response putAccepting(String path, String json, String accept) {
+    return send(json(path).header("Accept", accept).PUT(body(json)));
+  }
+
   /** A CORS preflight, as a browser on another origin sends before a POST. No cookie. */
   public Response preflight(String path) {
     try {

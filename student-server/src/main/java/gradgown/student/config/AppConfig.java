@@ -5,8 +5,10 @@ import gradgown.student.auth.AuthInterceptor;
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -34,6 +36,15 @@ public class AppConfig implements WebMvcConfigurer {
    * The schedule and the announcements are public, as in the original service. Everything about
    * "my" data needs a session.
    */
+  /**
+   * Every response is JSON, whatever the request says it accepts. With negotiation on, a request
+   * that did not accept JSON had its command carried out and was then told 400.
+   */
+  @Override
+  public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+    configurer.ignoreAcceptHeader(true).defaultContentType(MediaType.APPLICATION_JSON);
+  }
+
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
     registry

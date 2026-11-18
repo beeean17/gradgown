@@ -180,6 +180,18 @@ class ContractTest extends ServerTest {
     assertEquals(true, read(response, "$.success"));
     assertEquals(operationId, read(response, "$.operationId"));
     assertTrue(read(response, "$.reservationId") instanceof String, "IDs are strings");
+
+    // The answer is the same JSON whatever the request says it accepts. A command that was
+    // carried out must not be reported as an error because of the Accept header.
+    Response updated =
+        signedInAs(STUDENT_1)
+            .putAccepting(
+                "/api/gown/reservations/2",
+                updateBody(newOperationId(), "1", reservationInput()),
+                "text/html");
+    assertStatus(200, updated);
+    assertEquals("2", read(updated, "$.reservationId"));
+    assertStatus(200, signedInAs(STUDENT_1).getAccepting("/api/me", "text/plain"));
   }
 
   @Test
@@ -220,6 +232,7 @@ class ContractTest extends ServerTest {
     // An error is JSON even for a request that says it does not accept JSON.
     assertError(401, "unauthenticated", anonymous().getAccepting("/api/me", "text/plain"));
     assertError(404, "not-found", anonymous().getAccepting("/api/announcements/999", "application/xml"));
+    assertError(400, "invalid-argument", student.get("/api/gown/reservations/me?periodId=%ff%fe"));
     // A preflight has no cookie. It must not fail on the session check.
     assertTrue(anonymous().preflight("/api/gown/reservations").status() < 500);
     assertEquals("0", dbValue("SELECT COUNT(*) FROM gown_reservations WHERE user_id = 5"));

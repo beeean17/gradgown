@@ -50,6 +50,17 @@ public class MentoringAdminRepository {
   /** How many reserved registrations chose an option in each session. Option 0 is "no choice". */
   public record OptionCount(int option, String name, int first, int second) {}
 
+  /** An event as its own query returns it, before the option names are added. */
+  private record EventRow(
+      String id,
+      boolean open,
+      boolean current,
+      String applyStartAt,
+      String applyEndAt,
+      String date,
+      String location,
+      int reservedCount) {}
+
   private static final String SELECT_EVENT =
       """
       SELECT e.id, e.is_open, e.is_current, e.apply_starts_at, e.apply_ends_at,
@@ -66,11 +77,35 @@ public class MentoringAdminRepository {
   }
 
   public List<EventView> findEvents() {
-    return jdbc.sql(SELECT_EVENT + "ORDER BY e.id DESC").query(this::event).list();
+    List<EventRow> rows =
+        jdbc.sql(SELECT_EVENT + "ORDER BY e.id DESC").query(MentoringAdminRepository::event).list();
+    return rows.stream().map(this::withOptionNames).toList();
   }
 
   public Optional<EventView> findCurrentEvent() {
-    return jdbc.sql(SELECT_EVENT + "WHERE e.is_current = TRUE").query(this::event).optional();
+    Optional<EventRow> row =
+        jdbc.sql(SELECT_EVENT + "WHERE e.is_current = TRUE")
+            .query(MentoringAdminRepository::event)
+            .optional();
+    return row.map(this::withOptionNames);
+  }
+
+  /**
+   * Adds the option names, read after the event query has finished and given its connection
+   * back. A query run from inside a row mapper would need a second connection while the first
+   * is still held, and enough simultaneous requests would then empty the pool for good.
+   */
+  private EventView withOptionNames(EventRow row) {
+    return new EventView(
+        row.id(),
+        row.open(),
+        row.current(),
+        row.applyStartAt(),
+        row.applyEndAt(),
+        row.date(),
+        row.location(),
+        findOptionNames(row.id()),
+        row.reservedCount());
   }
 
   /** The names of options 1 to 7, in order. An option without a row or a name is "". */
@@ -182,17 +217,15 @@ public class MentoringAdminRepository {
         > 0;
   }
 
-  private EventView event(ResultSet row, int n) throws SQLException {
-    String id = row.getString("id");
-    return new EventView(
-        id,
+  private static EventRow event(ResultSet row, int n) throws SQLException {
+    return new EventRow(
+        row.getString("id"),
         row.getBoolean("is_open"),
         row.getBoolean("is_current"),
         SeoulTime.iso(row.getObject("apply_starts_at", LocalDateTime.class)),
         SeoulTime.iso(row.getObject("apply_ends_at", LocalDateTime.class)),
         SeoulTime.isoStartOfDay(row.getObject("event_date", LocalDate.class)),
         row.getString("location"),
-        findOptionNames(id),
         row.getInt("reserved_count"));
   }
 

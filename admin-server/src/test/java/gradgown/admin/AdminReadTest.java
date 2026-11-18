@@ -10,6 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -123,6 +128,47 @@ class AdminReadTest extends AdminServerTest {
     assertError(400, "invalid-argument", admin.get("/api/admin/mentoring/registrations?first=x"));
     assertError(400, "invalid-argument", admin.get("/api/admin/audit-logs?cursor=nonsense"));
     assertError(404, "not-found", admin.get("/api/admin/no-such-path"));
+    // A query string that is not valid UTF-8 once decoded.
+    assertError(400, "invalid-argument", admin.get("/api/admin/gown/reservations?q=%ff%fe"));
+    assertError(400, "invalid-argument", admin.get("/api/admin/audit-logs?domain=%ff"));
+    // A cursor no page ever produced: a year no TIMESTAMP holds, an ID outside ASCII.
+    assertError(
+        400, "invalid-argument", admin.get("/api/admin/audit-logs?cursor=9999-12-31T23:59:59,x"));
+    assertError(
+        400,
+        "invalid-argument",
+        admin.get("/api/admin/audit-logs?cursor=2026-11-10T12:00:00.123,%ED%95%9C%EA%B8%80"));
+  }
+
+  @Test
+  @DisplayName("many simultaneous event reads do not use up the connection pool")
+  void simultaneousEventReads() throws Exception {
+    // More requests than the pool has connections (10). When the option names were read from
+    // inside the row mapper, each request held one connection and waited for a second.
+    int requests = 40;
+    HttpTestClient admin = signedInAs(ADMIN);
+    ExecutorService threads = Executors.newFixedThreadPool(requests);
+    try {
+      CountDownLatch start = new CountDownLatch(1);
+      List<Future<Response>> running = new ArrayList<>();
+      for (int i = 0; i < requests; i++) {
+        running.add(
+            threads.submit(
+                () -> {
+                  start.await();
+                  return admin.get("/api/admin/mentoring/events");
+                }));
+      }
+      start.countDown();
+      for (Future<Response> response : running) {
+        assertStatus(200, response.get(20, TimeUnit.SECONDS));
+      }
+    } finally {
+      threads.shutdownNow();
+    }
+    assertEquals(
+        List.of("2027-01", "2026-05"),
+        read(admin.get("/api/admin/mentoring/events"), "$[*].eventId"));
   }
 
   @Test

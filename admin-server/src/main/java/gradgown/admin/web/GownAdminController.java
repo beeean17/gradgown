@@ -21,7 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class GownAdminController {
 
-  public record OpenRequest(Boolean isOpen) {}
+  /** {@code isOpen} is an Object so that only a JSON boolean passes; "true" and 1 do not. */
+  public record OpenRequest(Object isOpen) {}
 
   private final GownAdminRepository gown;
 
@@ -63,13 +64,13 @@ public class GownAdminController {
    */
   @PutMapping("/api/admin/gown/periods/{periodId}/open")
   public Map<String, Object> setOpen(@PathVariable String periodId, @RequestBody OpenRequest body) {
-    if (body.isOpen() == null) {
+    if (!(body.isOpen() instanceof Boolean open)) {
       throw Check.invalid("isOpen 값을 확인해 주세요.");
     }
-    if (gown.setOpen(periodId, body.isOpen()) == 0 && !gown.exists(periodId)) {
+    if (gown.setOpen(periodId, open) == 0 && !gown.exists(periodId)) {
       throw new ApiException(ErrorCode.NOT_FOUND, "회차를 찾을 수 없습니다.");
     }
-    return Map.of("success", true, "periodId", periodId, "isOpen", body.isOpen());
+    return Map.of("success", true, "periodId", periodId, "isOpen", open);
   }
 
   private static Long cursorId(String cursor) {
