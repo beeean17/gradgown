@@ -36,14 +36,20 @@ DDL의 세부는 2026-11-18에 확정했다([data-model.md](./decisions/data-mod
 | 과제용 구현이고 실제 운영에는 쓰지 않는다 | 확정 | [project-positioning.md](./decisions/project-positioning.md) |
 | 학위복 대여와 St:talk 두 서비스를 모두 구현한다 | 확정 | [scope.md](./decisions/scope.md) |
 | MySQL과 Spring Boot로 만든다 | DB 확정, 나머지 잠정 | [tech-stack.md](./decisions/tech-stack.md) |
+| 서버는 Spring JDBC(`JdbcClient`)로 DB에 접근한다. SQL을 직접 쓴다 | 확정 | [tech-stack.md](./decisions/tech-stack.md) |
+| 모듈은 `db`, `core`, `student-server`, `admin-server`로 둔다 | 확정 | [tech-stack.md](./decisions/tech-stack.md) |
 | localhost에서만 실행한다 | 확정 | [local-only.md](./decisions/local-only.md) |
 | MySQL은 Docker 컨테이너로 띄운다 | 확정 (구성은 제안) | [mysql-docker.md](./decisions/mysql-docker.md) |
 | MySQL 이미지는 `mysql:8.4`다 | 확정 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 스키마는 초기화 SQL 파일로만 관리한다 | 확정 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 스키마·권한 테스트는 JUnit과 Testcontainers로 쓴다 | 확정 | [testing/dynamic.md](./testing/dynamic.md) |
 | DB 계정에 `GRANT`를 직접 준다. role은 쓰지 않고, 테이블은 초기화 때 root가 만든다 | 확정 | [db-privileges.md](./decisions/db-privileges.md) |
-| Google 로그인 대신 테스트 계정으로 로그인한다 | 확정 | [test-login.md](./decisions/test-login.md) |
+| Google 로그인 대신 테스트 계정으로 로그인한다. 계정 목록에서 고르고 비밀번호는 없다 | 확정 | [test-login.md](./decisions/test-login.md) |
 | 학생용과 관리자용 서버를 나눈다 | 확정 | [admin-server-split.md](./decisions/admin-server-split.md) |
+| 관리자용 서버는 로그인한 사람의 등급으로 DB 계정을 고른다. 관리자의 쓰기는 MySQL이 거부한다 | 확정 | [admin-server-split.md](./decisions/admin-server-split.md) |
+| 관리자 쪽의 쓰기는 마스터의 접수 열기·닫기 하나다 | 확정 | [scope.md](./decisions/scope.md) |
+| 테스터 권한은 넣지 않는다 | 확정 | [scope.md](./decisions/scope.md) |
+| 학생 DB 계정의 `UPDATE`를 컬럼 단위로 좁힌다 | 확정 (미반영) | [db-privileges.md](./decisions/db-privileges.md) |
 | 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다 | 확정 (권한 표는 초안) | [db-privileges.md](./decisions/db-privileges.md) |
 | CI는 GitHub Actions로 돌린다 | 확정 (작업 구성은 제안) | [ci.md](./decisions/ci.md) |
 | Firestore 구조를 테이블 11개로 옮긴다 | 잠정 (DDL의 세부는 확정) | [data-model.md](./decisions/data-model.md) |
@@ -56,13 +62,9 @@ DDL의 세부는 2026-11-18에 확정했다([data-model.md](./decisions/data-mod
 |---|---|
 | 개발용 DB의 데이터를 남길지, 이미지 태그를 패치 버전까지 고정할지 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 보고서의 분량 기준·언어, 개요, ER 다이어그램, 참고 문헌 | [requirements/report-requirements.md](./requirements/report-requirements.md) |
-| Spring에서 DB에 접근하는 방식 (JPA, JDBC 등), Spring Boot 버전, 모듈 구성 | [tech-stack.md](./decisions/tech-stack.md) |
-| 관리자 기능을 어디까지 넣을지 (설정 저장, 공지·FAQ 작성, 명단 내보내기) | [scope.md](./decisions/scope.md) |
-| 테스터 권한을 넣을지 | [scope.md](./decisions/scope.md), [data-model.md](./decisions/data-model.md) |
-| 테스트 로그인의 구체적인 방식 | [test-login.md](./decisions/test-login.md) |
-| API 응답 모양, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
-| 관리자용 서버가 조회 계정과 마스터 계정을 골라 쓰는 방식, 두 서버의 공용 코드, 포트 | [admin-server-split.md](./decisions/admin-server-split.md) |
-| 학생 계정의 `UPDATE`를 컬럼 단위로 더 좁힐지 | [db-privileges.md](./decisions/db-privileges.md) |
+| Spring Boot 버전, 프론트를 가져올 범위 | [tech-stack.md](./decisions/tech-stack.md) |
+| API의 경로 이름과 응답 모양, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
+| 두 서버의 포트 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | 정적 검사 도구, 서버를 띄우는 테스트에서 DB를 되돌리는 방법, 브라우저 테스트 자동화 | [testing/README.md](./testing/README.md) |
 | CI를 언제 돌릴지, 실패한 채 병합되는 것을 막을지 | [ci.md](./decisions/ci.md) |
 | 과제 쪽 미확인 사항 (제출 기한, 배점, 개인/팀, 제출 형식, 보고서 언어) | [requirements/course-requirements.md](./requirements/course-requirements.md) |

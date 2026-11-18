@@ -66,7 +66,7 @@
 
 | 항목 | 규칙 |
 |---|---|
-| 서버 | 학생 API와 관리자 API는 서로 다른 서버가 제공한다([admin-server-split.md](../decisions/admin-server-split.md)). 포트는 미정 |
+| 서버 | 학생 API와 관리자 API는 서로 다른 서버가 제공한다([admin-server-split.md](../decisions/admin-server-split.md)). 학생용 8080, 관리자용 8081 |
 | 경로 | 모두 `/api` 아래. 관리자용 서버의 경로는 `/api/admin` 아래 |
 | 형식 | JSON |
 | 응답 모양 | 학생 웹의 화면 타입(`web/src/shared/types/index.ts`)을 그대로 쓴다. `ReservationPeriod`, `Reservation`, `MentoringEvent`, `MentoringRegistration`, `Announcement` |
@@ -131,11 +131,12 @@
 
 | 메서드와 경로 | 내용 |
 |---|---|
-| `POST /api/auth/login` | 테스트 계정으로 로그인. 본문 형식은 [test-login.md](../decisions/test-login.md)의 방식이 정해지면 정한다 |
+| `GET /api/auth/accounts` | 로그인 화면에 보여 줄 계정 목록 `[{ email, role }]`. 로그인 없이 부른다. 그 서버에 로그인할 수 있는 계정만 준다 |
+| `POST /api/auth/login` | 본문 `{ email }`. 비밀번호는 없다([test-login.md](../decisions/test-login.md)). 없는 계정은 `not-found`, 그 서버에 맞지 않는 등급은 `permission-denied` |
 | `POST /api/auth/logout` | 로그아웃 |
 | `GET /api/me` | `{ uid, email, role }`. 로그인하지 않았으면 401 |
 
-세 경로는 두 서버에 각각 있다. 학생용 서버는 학생 계정만, 관리자용 서버는 관리자·마스터 계정만 로그인시킨다.
+네 경로는 두 서버에 각각 있다. 학생용 서버는 학생 계정만, 관리자용 서버는 관리자·마스터 계정만 로그인시킨다.
 
 ## 관리자 API (제안)
 
@@ -151,6 +152,18 @@
 | `GET /api/admin/announcements`, `GET /api/admin/faqs` | `getContent(kind)` | 숨김 항목 포함 |
 | `GET /api/admin/audit-logs?domain=&outcome=&cursor=` | `listAudit()` | 최근 200건 제한 없이 서버 필터 |
 
+### 쓰기 (제안)
+
+관리자 쪽의 쓰기는 접수 열기·닫기뿐이다([scope.md](../decisions/scope.md)).
+
+| 메서드와 경로 | 본문 | 내용 |
+|---|---|---|
+| `PUT /api/admin/gown/periods/{periodId}/open` | `{ isOpen }` | 회차의 접수를 켜거나 끈다 |
+| `PUT /api/admin/mentoring/events/{eventId}/open` | `{ isOpen }` | 행사의 접수를 켜거나 끈다. 켜려면 선택지 7개 모두 이름이 있어야 한다(MNT-51). 아니면 `failed-precondition` |
+
+- 마스터로 로그인했을 때만 된다. 관리자로 로그인하면 `permission-denied`(403)다.
+- 이 거부는 서버 코드가 아니라 MySQL이 한다. 관리자의 요청은 읽기 권한만 있는 DB 계정으로 실행되고, MySQL의 오류 1142를 서버가 `permission-denied`로 바꾼다([admin-server-split.md](../decisions/admin-server-split.md)).
+
 ## 계약에서 빠지는 것
 
 | 기존 접점 | 처리 |
@@ -159,9 +172,9 @@
 | `/api/schedule` 엣지 캐시 | 없앤다. 서버를 바로 읽는다 |
 | App Check(reCAPTCHA) | 없앤다 |
 | `users/{uid}` 프로필 생성 | 없앤다. 계정은 시드 데이터에 있다 |
-| 테스터 권한 읽기 | 미정([scope.md](../decisions/scope.md)). 넣지 않으면 웹의 테스터 판정은 항상 거짓이다 |
-| `adminCommand`의 쓰기 전부 | 미정([scope.md](../decisions/scope.md)) |
-| `getUser`, `getMembers` | 미정. 관리자 쓰기 범위와 함께 정한다 |
+| 테스터 권한 읽기 | 뺀다([scope.md](../decisions/scope.md)). 웹의 테스터 판정은 항상 거짓이다 |
+| `adminCommand`의 쓰기 | 접수 열기·닫기만 남긴다(위 "쓰기"). 나머지는 뺀다([scope.md](../decisions/scope.md)) |
+| `getUser`, `getMembers` | 뺀다. 관리자 등록과 사용자 조회는 범위 밖이다 |
 | `listFunctionLogs` (Cloud Logging) | 뺀다 |
 | `uploadImage` (Storage) | 뺀다 |
 
@@ -169,5 +182,6 @@
 
 - 응답을 화면 타입 그대로 줄지, Firestore 문서 모양을 흉내 내 매퍼를 남길지. 초안은 앞쪽이다.
 - `failed-precondition`의 HTTP 상태(409와 422 중).
-- 관리자 앱의 어느 화면까지 가져올지, 관리자 쓰기를 넣을지([scope.md](../decisions/scope.md)).
-- DB가 권한 오류로 거부한 요청을 어떤 `code`로 돌려줄지. 제안은 `permission-denied`다.
+- 관리자 앱의 어느 화면까지 가져올지.
+
+DB가 권한 오류로 거부한 요청은 `permission-denied`로 돌려주기로 확정했다(2026-11-18).

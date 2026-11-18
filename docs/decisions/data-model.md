@@ -97,7 +97,7 @@ Firestore의 문서, 하위 컬렉션, 중첩 map을 **테이블 11개**로 정�
 
 ## 초안에서 뺀 것
 
-- 테스터 권한(`settings_private/reservation_testing`, `mentoring_testing`). 넣기로 하면 테이블 두 개가 는다([scope.md](./scope.md) 미정).
+- 테스터 권한(`settings_private/reservation_testing`, `mentoring_testing`). 넣지 않기로 확정했다(2026-11-18, [scope.md](./scope.md)).
 - 필드 암호화([project-positioning.md](./project-positioning.md)).
 - 원본의 v1(Flutter) 호환 필드와 변환 규칙.
 
