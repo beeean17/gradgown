@@ -208,6 +208,67 @@ class PrivilegeTest {
     @ParameterizedTest(name = "{0}")
     @ValueSource(
         strings = {
+          "UPDATE gown_reservations SET user_id = user_id WHERE 1 = 0",
+          "UPDATE gown_reservations SET period_id = period_id WHERE 1 = 0",
+          "UPDATE gown_reservations SET created_by = created_by WHERE 1 = 0",
+          "UPDATE gown_reservations SET created_at = created_at WHERE 1 = 0",
+          "UPDATE gown_reservations SET updated_at = updated_at WHERE 1 = 0",
+          "UPDATE mentoring_registrations SET user_id = user_id WHERE 1 = 0",
+          "UPDATE mentoring_registrations SET event_id = event_id WHERE 1 = 0",
+          "UPDATE mentoring_registrations SET created_by = created_by WHERE 1 = 0",
+          "UPDATE mentoring_registrations SET created_at = created_at WHERE 1 = 0",
+          "UPDATE audit_logs SET operation_id = operation_id WHERE 1 = 0",
+          "UPDATE audit_logs SET actor_id = actor_id WHERE 1 = 0",
+          "UPDATE audit_logs SET action = action WHERE 1 = 0",
+          "UPDATE audit_logs SET domain = domain WHERE 1 = 0",
+          "UPDATE audit_logs SET created_at = created_at WHERE 1 = 0"
+        })
+    @DisplayName("may not change the owner, the period or event, or the creation columns")
+    void mayNotUpdateFixedColumns(String statement) throws SQLException {
+      try (Connection db = MySqlTestDatabase.connect(Account.STUDENT)) {
+        assertRejected(ErrorCode.COLUMN_ACCESS_DENIED, () -> Sql.update(db, statement));
+      }
+    }
+
+    @Test
+    @DisplayName("an update still moves updated_at, which the account cannot set itself")
+    void updatedAtStillChanges() throws SQLException {
+      // Committed by the master with an old updated_at, because the student cannot set the
+      // column and another connection has to see the row. Removed at the end.
+      try (Connection master = MySqlTestDatabase.connect(Account.MASTER)) {
+        insertReservation(master, STUDENT_A, PERIOD_1, SLOT_1A, SLOT_1B);
+        Sql.update(
+            master,
+            "UPDATE gown_reservations SET updated_at = '2030-01-01 00:00:00' WHERE user_id = ?",
+            STUDENT_A);
+        try (Connection student = MySqlTestDatabase.connect(Account.STUDENT)) {
+          assertEquals(
+              1,
+              Sql.update(
+                  student,
+                  """
+                  UPDATE gown_reservations SET phone = '010-9999-9999', version = version + 1
+                  WHERE user_id = ?
+                  """,
+                  STUDENT_A));
+          assertEquals(
+              0,
+              Sql.number(
+                  student,
+                  """
+                  SELECT COUNT(*) FROM gown_reservations
+                  WHERE user_id = ? AND updated_at = '2030-01-01 00:00:00'
+                  """,
+                  STUDENT_A));
+        } finally {
+          Sql.update(master, "DELETE FROM gown_reservations WHERE user_id = ?", STUDENT_A);
+        }
+      }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(
+        strings = {
           "DELETE FROM gown_reservations WHERE 1 = 0",
           "DELETE FROM mentoring_registrations WHERE 1 = 0",
           "DELETE FROM audit_logs WHERE 1 = 0",
