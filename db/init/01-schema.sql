@@ -200,7 +200,7 @@ CREATE TABLE announcements (
   id           BIGINT       NOT NULL AUTO_INCREMENT,
   title        VARCHAR(200) NOT NULL,
   content      TEXT         NOT NULL,
-  category     VARCHAR(30)  NOT NULL DEFAULT 'notice',
+  category     VARCHAR(30)  NOT NULL DEFAULT '일반',
   is_pinned    BOOLEAN      NOT NULL DEFAULT FALSE,
   is_visible   BOOLEAN      NOT NULL DEFAULT TRUE,
   is_popup     BOOLEAN      NOT NULL DEFAULT FALSE,

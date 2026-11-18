@@ -160,14 +160,14 @@ INSERT INTO announcements
 VALUES
   (1, '2027년 2월 학위복 대여 안내',
    '학위복 대여 신청을 받습니다. 대여와 반납 시간을 골라 신청해 주세요.',
-   'notice', TRUE, TRUE, FALSE, NULL, TRUE, 7),
+   '학위복', TRUE, TRUE, FALSE, NULL, TRUE, 7),
   (2, 'St:talk 멘토링 신청 안내',
    '졸업생 초청 멘토링 St:talk 신청을 받습니다. 차시마다 멘토 한 명을 고를 수 있습니다.',
-   'notice', FALSE, TRUE, TRUE, 1, FALSE, 7),
+   'St:talk', FALSE, TRUE, TRUE, 1, FALSE, 7),
   -- Hidden: must not appear in visible_announcements.
   (3, '(작성 중) 반납 장소 변경 안내',
    '아직 공개하지 않은 공지입니다.',
-   'notice', FALSE, FALSE, FALSE, NULL, FALSE, 7);
+   '학위복', FALSE, FALSE, FALSE, NULL, FALSE, 7);
 
 INSERT INTO faqs (id, question, answer, category, tags, display_order, is_visible) VALUES
   (1, '다른 사람이 대신 받아도 되나요?',
