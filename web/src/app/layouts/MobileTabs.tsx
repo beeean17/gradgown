@@ -126,7 +126,7 @@ function ReservationPanel() {
   return (
     <SignInPanel
       title="로그인하고 학위복을 예약해요"
-      description="구글 계정으로 로그인하면 예약 일정과 수령 안내를 확인하고 바로 예약할 수 있어요."
+      description="테스트 계정으로 로그인하면 예약 일정과 수령 안내를 확인하고 바로 예약할 수 있어요."
     >
       <ReservationGuidePage />
     </SignInPanel>
@@ -137,7 +137,7 @@ function MyApplicationsPanel() {
   return (
     <SignInPanel
       title="로그인하고 내 신청을 확인해요"
-      description="구글 계정으로 로그인하면 학위복 예약과 St:talk 신청 내용을 볼 수 있어요."
+      description="테스트 계정으로 로그인하면 학위복 예약과 St:talk 신청 내용을 볼 수 있어요."
     >
       <MyApplicationsPage />
     </SignInPanel>
