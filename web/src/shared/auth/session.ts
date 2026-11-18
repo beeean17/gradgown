@@ -1,7 +1,7 @@
 import { ApiError, apiGet, apiSend } from '../api/http'
 import { stopLive } from '../data/live'
 import { PATHS } from '../../app/routes/paths'
-import { currentUser, freezeAuth, setSignedIn, type Me } from './useAuth'
+import { announceSignedOut, currentUser, freezeAuth, setSignedIn, type Me } from './useAuth'
 
 /**
  * Test login (docs/decisions/test-login.md). The login screen lists the seeded
@@ -42,6 +42,7 @@ export async function signOutAndReload(): Promise<void> {
   if (uid) stopLive((key) => key.includes(`user:${uid}:`))
   try {
     await apiSend('POST', '/api/auth/logout', {})
+    announceSignedOut()
   } catch (error) {
     console.error('[grad42] 로그아웃하지 못했습니다.', error)
   }

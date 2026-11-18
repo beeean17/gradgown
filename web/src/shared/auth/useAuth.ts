@@ -38,6 +38,27 @@ let started = false
 let frozen = false
 const listeners = new Set<() => void>()
 
+/**
+ * The tabs of one browser share the session cookie, so signing in or out in
+ * one tab changes who every other tab is. Firebase Auth told the other tabs;
+ * here each tab writes the session's user under this key, and a tab that sees
+ * it change to someone else starts again (see `start`).
+ */
+const SESSION_USER_KEY = 'grad42:session-user'
+
+function announceSession(uid: string) {
+  try {
+    window.localStorage.setItem(SESSION_USER_KEY, uid)
+  } catch {
+    // No storage (private mode): the tabs stay unsynchronised.
+  }
+}
+
+/** Tells the other tabs that this browser's session ended. */
+export function announceSignedOut() {
+  announceSession('')
+}
+
 function publish(next: AuthState) {
   if (frozen) return
   state = next
@@ -47,18 +68,30 @@ function publish(next: AuthState) {
 /** Takes the server's answer as the signed-in user. */
 export function setSignedIn(me: Me) {
   publish({ status: 'authenticated', user: { uid: me.uid, email: me.email, displayName: '' } })
+  announceSession(me.uid)
 }
 
 function start() {
   if (started) return
   started = true
   apiGet<Me>('/api/me').then(setSignedIn, (error) => {
-    if (!(error instanceof ApiError && error.status === 401)) {
+    if (error instanceof ApiError && error.status === 401) {
+      announceSignedOut()
+    } else {
       console.error('[grad42] 로그인 상태를 확인하지 못했습니다.', error)
     }
     publish(GUEST)
   })
-  window.addEventListener(SESSION_LOST_EVENT, () => publish(GUEST))
+  window.addEventListener(SESSION_LOST_EVENT, () => {
+    publish(GUEST)
+    announceSignedOut()
+  })
+  // Another tab signed in or out. Reload, as sign-out does, so that no screen
+  // keeps one account's name or half-filled form over another account's data.
+  window.addEventListener('storage', (event) => {
+    if (event.key !== SESSION_USER_KEY || event.newValue === null) return
+    if (event.newValue !== (state.user?.uid ?? '')) window.location.reload()
+  })
 }
 
 function subscribe(listener: () => void): () => void {
