@@ -3,12 +3,12 @@ package gradgown.core.time;
 import gradgown.core.error.ApiException;
 import gradgown.core.error.ErrorCode;
 import java.time.Clock;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 
 /**
@@ -22,6 +22,11 @@ public final class SeoulTime {
 
   private static final DateTimeFormatter ISO =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'+09:00'");
+
+  /** TIMESTAMP holds 1970-01-01 to 2038-01-19 (UTC). Whole years inside that range. */
+  private static final int FIRST_YEAR = 1971;
+
+  private static final int LAST_YEAR = 2037;
 
   private SeoulTime() {}
 
@@ -41,15 +46,25 @@ public final class SeoulTime {
   }
 
   /**
-   * Reads an ISO time with an offset or {@code Z} and returns the Seoul time of that instant.
+   * Reads an ISO time with an offset or {@code Z} and returns the Seoul time of that instant, to
+   * the second.
    *
-   * @throws ApiException {@code invalid-argument} when the text is not such a time
+   * @throws ApiException {@code invalid-argument} when the text is not such a time, or the time
+   *     is outside the range a TIMESTAMP column holds
    */
   public static LocalDateTime parse(String isoText, String fieldName) {
     try {
-      return OffsetDateTime.parse(isoText).atZoneSameInstant(ZONE).toLocalDateTime();
-    } catch (DateTimeParseException | NullPointerException e) {
-      throw new ApiException(ErrorCode.INVALID_ARGUMENT, fieldName + " 시각 형식을 확인해 주세요.");
+      LocalDateTime time =
+          OffsetDateTime.parse(isoText)
+              .atZoneSameInstant(ZONE)
+              .toLocalDateTime()
+              .truncatedTo(ChronoUnit.SECONDS);
+      if (time.getYear() >= FIRST_YEAR && time.getYear() <= LAST_YEAR) {
+        return time;
+      }
+    } catch (DateTimeException | NullPointerException e) {
+      // Falls through to the error below.
     }
+    throw new ApiException(ErrorCode.INVALID_ARGUMENT, fieldName + " 시각 형식을 확인해 주세요.");
   }
 }

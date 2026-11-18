@@ -200,6 +200,25 @@ class ContractTest extends ServerTest {
     assertError(400, "invalid-argument", signedInAs(STUDENT_5).post("/api/gown/reservations", "not json"));
   }
 
+  @Test
+  @DisplayName("what the framework turns away has the same error body")
+  void frameworkErrors() {
+    HttpTestClient student = signedInAs(STUDENT_5);
+
+    Response unknownPath = student.get("/api/no-such-path");
+    assertError(404, "not-found", unknownPath);
+    assertKeys(unknownPath, "$", "code", "message", "operationId");
+
+    // A body that is not declared as JSON, and a method the path does not take.
+    Response notJson =
+        student.post(
+            "/api/gown/reservations", createBody(newOperationId(), reservationInput()), "text/plain");
+    assertError(400, "invalid-argument", notJson);
+    assertKeys(notJson, "$", "code", "message", "operationId");
+    assertError(400, "invalid-argument", student.put("/api/gown/reservations", "{}"));
+    assertEquals("0", dbValue("SELECT COUNT(*) FROM gown_reservations WHERE user_id = 5"));
+  }
+
   private static void assertKeys(Response response, String jsonPath, String... expected) {
     Map<String, Object> object = read(response, jsonPath);
     assertEquals(Set.of(expected), object.keySet(), response.body());

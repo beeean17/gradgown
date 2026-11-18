@@ -37,6 +37,21 @@ class InputTest {
   }
 
   @Test
+  @DisplayName("a time is read to the second, and a time no TIMESTAMP can hold is invalid")
+  void timeRange() {
+    ReservationInput.Valid valid =
+        reservation("2027-02-15T10:00:00.789+09:00", "2027-02-15T10:00:00.999+09:00").validate();
+    assertEquals(LocalDateTime.parse("2027-02-15T10:00:00"), valid.rentAt());
+    assertEquals(LocalDateTime.parse("2027-02-15T10:00:00"), valid.returnAt());
+
+    assertInvalid(() -> reservation("2027-02-15T10:00:00+09:00", "2040-01-01T00:00:00+09:00").validate());
+    assertInvalid(() -> reservation("2027-02-15T10:00:00+09:00", "+12345-01-01T00:00:00Z").validate());
+    assertInvalid(() -> reservation("2027-02-15T10:00:00+09:00", "+999999999-12-31T23:59:59Z").validate());
+    assertInvalid(() -> reservation("2027-02-15 10:00", "2027-02-17T10:00:00+09:00").validate());
+    assertInvalid(() -> reservation(null, "2027-02-17T10:00:00+09:00").validate());
+  }
+
+  @Test
   @DisplayName("RES-29 the size is stored in lower case and must be s, m or l")
   void sizeIsLowerCased() {
     assertEquals("l", reservationWithSize("L").validate().size());
@@ -87,6 +102,9 @@ class InputTest {
     assertInvalid(() -> mentoring("9999000a", 4, 1, 2).validate());
     assertInvalid(() -> mentoring("99990001", 5, 1, 2).validate());
     assertInvalid(() -> mentoring("99990001", null, 1, 2).validate());
+    // What JSON sent as 2.9 or "2" arrives as a Double or a String, not as a whole number.
+    assertInvalid(() -> mentoring("99990001", 2.9, 1, 2).validate());
+    assertInvalid(() -> mentoring("99990001", "2", 1, 2).validate());
   }
 
   @Test
@@ -129,7 +147,7 @@ class InputTest {
         "2027-02-15T10:00:00+09:00", "2027-02-17T10:00:00+09:00", false, null, null);
   }
 
-  private static MentoringInput mentoring(String studentId, Integer grade, int first, int second) {
+  private static MentoringInput mentoring(String studentId, Object grade, int first, int second) {
     return new MentoringInput("홍길동", "화학공학과", studentId, grade, "010-0000-0001", first, second);
   }
 

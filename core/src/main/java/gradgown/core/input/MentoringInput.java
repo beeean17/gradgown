@@ -12,10 +12,10 @@ public record MentoringInput(
     String name,
     String department,
     String studentId,
-    Integer grade,
+    Object grade,
     String phone,
-    Integer firstOption,
-    Integer secondOption) {
+    Object firstOption,
+    Object secondOption) {
 
   private static final Pattern STUDENT_ID = Pattern.compile("[0-9]{8}");
 
@@ -39,9 +39,7 @@ public record MentoringInput(
     if (!STUDENT_ID.matcher(validStudentId).matches()) {
       throw Check.invalid("학번은 숫자 8자리로 입력해 주세요.");
     }
-    if (grade == null || grade < 1 || grade > 4) {
-      throw Check.invalid("학년을 확인해 주세요.");
-    }
+    int validGrade = Check.wholeNumber(grade, 1, 4, "학년을 확인해 주세요.");
     int first = option(firstOption);
     int second = option(secondOption);
     // The schema holds the same two rules as CHECK constraints. Checking here gives the
@@ -56,16 +54,13 @@ public record MentoringInput(
         Check.text(name, 1, 30, "이름"),
         Check.text(department, 1, 30, "학과"),
         validStudentId,
-        grade,
+        validGrade,
         Check.phone(phone, "전화번호"),
         first,
         second);
   }
 
-  private static int option(Integer value) {
-    if (value == null || value < MentoringOptions.NONE || value > MentoringOptions.COUNT) {
-      throw Check.invalid("선택지를 확인해 주세요.");
-    }
-    return value;
+  private static int option(Object value) {
+    return Check.wholeNumber(value, MentoringOptions.NONE, MentoringOptions.COUNT, "선택지를 확인해 주세요.");
   }
 }

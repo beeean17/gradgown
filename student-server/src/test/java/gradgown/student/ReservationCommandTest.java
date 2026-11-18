@@ -215,6 +215,58 @@ class ReservationCommandTest extends ServerTest {
   }
 
   @Test
+  @DisplayName("a proxy pickup stores the proxy's details; without one they are dropped")
+  void proxyPickup() {
+    HttpTestClient student = signedInAs(STUDENT_5);
+    String proxyInput =
+        reservationInput()
+            .replace(
+                "\"isProxy\":false,\"proxyName\":null,\"proxyPhone\":null",
+                "\"isProxy\":true,\"proxyName\":\"향단\",\"proxyPhone\":\"010-0000-0015\"");
+
+    Response created = student.post(RESERVATIONS, createBody(newOperationId(), proxyInput));
+    assertStatus(200, created);
+    String id = read(created, "$.reservationId");
+    Response mine = student.get(RESERVATIONS + "/me");
+    assertEquals(true, read(mine, "$[0].isProxy"));
+    assertEquals("향단", read(mine, "$[0].proxyName"));
+    assertEquals("010-0000-0015", read(mine, "$[0].proxyPhone"));
+
+    // A proxy pickup without the proxy's phone is invalid.
+    assertError(
+        400,
+        "invalid-argument",
+        student.put(
+            RESERVATIONS + "/" + id,
+            updateBody(
+                newOperationId(), "1", proxyInput.replace("\"010-0000-0015\"", "null"))));
+    // Changing to "no proxy" clears both columns, as the CHECK constraint requires.
+    assertStatus(
+        200,
+        student.put(RESERVATIONS + "/" + id, updateBody(newOperationId(), "1", reservationInput())));
+    assertNull(dbValue("SELECT CONCAT(proxy_name, proxy_phone) FROM gown_reservations WHERE id = ?", id));
+    assertEquals("0", dbValue("SELECT is_proxy FROM gown_reservations WHERE id = ?", id));
+  }
+
+  @Test
+  @DisplayName("a time outside any sensible range is invalid-argument, not a server error")
+  void absurdTime() {
+    HttpTestClient student = signedInAs(STUDENT_5);
+    String operationId = newOperationId();
+
+    assertError(
+        400,
+        "invalid-argument",
+        student.post(
+            RESERVATIONS,
+            createBody(
+                operationId,
+                reservationInput("5", "2027-02-15T10:00:00+09:00", "+999999999-12-31T23:59:59Z"))));
+    assertEquals(
+        "rejected", dbValue("SELECT outcome FROM audit_logs WHERE operation_id = ?", operationId));
+  }
+
+  @Test
   @DisplayName("RES-13 a return time before the rent time is invalid-argument")
   void returnBeforeRent() {
     assertError(

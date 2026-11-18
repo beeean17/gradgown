@@ -45,6 +45,28 @@ public final class Check {
     return trimmed;
   }
 
+  /**
+   * A JSON whole number. The field is declared as {@code Object} so that the JSON library hands
+   * over what was sent instead of converting it: 2.9 and "2" are not whole numbers.
+   */
+  public static int wholeNumber(Object value, int min, int max, String message) {
+    if (value instanceof Integer number && number >= min && number <= max) {
+      return number;
+    }
+    throw invalid(message);
+  }
+
+  /** A JSON boolean, or nothing, which reads as false. */
+  public static boolean flag(Object value, String fieldName) {
+    if (value == null) {
+      return false;
+    }
+    if (value instanceof Boolean flag) {
+      return flag;
+    }
+    throw invalid(fieldName + " 값을 확인해 주세요.");
+  }
+
   public static String phone(String value, String fieldName) {
     String trimmed = value == null ? "" : value.strip();
     if (!PHONE.matcher(trimmed).matches()) {

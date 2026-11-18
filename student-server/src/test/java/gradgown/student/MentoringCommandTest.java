@@ -80,6 +80,28 @@ class MentoringCommandTest extends ServerTest {
   }
 
   @Test
+  @DisplayName("a grade or an option that is not a whole number is invalid-argument")
+  void numbersMustBeWholeNumbers() {
+    HttpTestClient student = signedInAs(STUDENT_5);
+
+    assertError(
+        400,
+        "invalid-argument",
+        student.post(
+            REGISTRATIONS,
+            createBody(newOperationId(), mentoringInput(1, 2).replace("\"grade\":4", "\"grade\":2.9"))));
+    assertError(
+        400,
+        "invalid-argument",
+        student.post(
+            REGISTRATIONS,
+            createBody(
+                newOperationId(),
+                mentoringInput(1, 2).replace("\"firstOption\":1", "\"firstOption\":\"1\""))));
+    assertEquals("0", dbValue("SELECT COUNT(*) FROM mentoring_registrations WHERE user_id = 5"));
+  }
+
+  @Test
   @DisplayName("MNT-25 an option without a name cannot be chosen")
   void unnamedOption() {
     dbUpdate("UPDATE mentoring_options SET name = '' WHERE event_id = '2027-01' AND option_no = 6");

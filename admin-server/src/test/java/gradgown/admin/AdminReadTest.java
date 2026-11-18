@@ -114,6 +114,18 @@ class AdminReadTest extends AdminServerTest {
   }
 
   @Test
+  @DisplayName("a parameter of the wrong type is invalid-argument, and an unknown path is not-found")
+  void badParameters() {
+    HttpTestClient admin = signedInAs(ADMIN);
+
+    assertError(400, "invalid-argument", admin.get("/api/admin/gown/reservations?limit=abc"));
+    assertError(400, "invalid-argument", admin.get("/api/admin/gown/reservations?cursor=abc"));
+    assertError(400, "invalid-argument", admin.get("/api/admin/mentoring/registrations?first=x"));
+    assertError(400, "invalid-argument", admin.get("/api/admin/audit-logs?cursor=nonsense"));
+    assertError(404, "not-found", admin.get("/api/admin/no-such-path"));
+  }
+
+  @Test
   @DisplayName("the period list shows every period with its counts")
   void periods() {
     Response response = signedInAs(ADMIN).get("/api/admin/gown/periods");

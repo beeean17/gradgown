@@ -17,7 +17,7 @@ public record ReservationInput(
     String slotId,
     String rentAt,
     String returnAt,
-    Boolean isProxy,
+    Object isProxy,
     String proxyName,
     String proxyPhone) {
 
@@ -57,7 +57,7 @@ public record ReservationInput(
     if (back.isBefore(rent)) {
       throw Check.invalid("반납 시각은 대여 시각과 같거나 이후여야 합니다.");
     }
-    boolean proxy = Boolean.TRUE.equals(isProxy);
+    boolean proxy = Check.flag(isProxy, "대리 수령");
     return new Valid(
         Check.text(name, 1, 60, "이름"),
         Check.text(studentId, 1, 30, "학번"),

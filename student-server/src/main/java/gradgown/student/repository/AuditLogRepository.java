@@ -56,20 +56,26 @@ public class AuditLogRepository {
             """
             UPDATE audit_logs
             SET outcome = 'succeeded', target_id = ?, completed_at = CURRENT_TIMESTAMP(3)
-            WHERE operation_id = ?
+            WHERE operation_id = ? AND outcome = 'received'
             """)
         .param(targetId)
         .param(operationId)
         .update();
   }
 
-  /** {@code outcome} is {@code rejected} (the request's fault) or {@code failed} (the server's). */
+  /**
+   * {@code outcome} is {@code rejected} (the request's fault) or {@code failed} (the server's).
+   *
+   * <p>Only a row that is still {@code received} changes. If the change did commit and only the
+   * acknowledgement was lost, the row already says {@code succeeded} and must stay so: a retry
+   * with the same operation ID then gets the earlier success back.
+   */
   public void markEnded(String operationId, String outcome, String failureKind, String errorCode) {
     jdbc.sql(
             """
             UPDATE audit_logs
             SET outcome = ?, failure_kind = ?, error_code = ?, completed_at = CURRENT_TIMESTAMP(3)
-            WHERE operation_id = ?
+            WHERE operation_id = ? AND outcome = 'received'
             """)
         .param(outcome)
         .param(failureKind)

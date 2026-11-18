@@ -38,6 +38,14 @@ public final class HttpTestClient {
     return send(json(path).POST(body(json)));
   }
 
+  /** A POST whose body is not declared as JSON. */
+  public Response post(String path, String body, String contentType) {
+    return send(
+        HttpRequest.newBuilder(URI.create(baseUrl + path))
+            .header("Content-Type", contentType)
+            .POST(body(body)));
+  }
+
   public Response put(String path, String json) {
     return send(json(path).PUT(body(json)));
   }
