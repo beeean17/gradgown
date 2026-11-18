@@ -95,8 +95,10 @@ export function useMyReservations() {
     uid && periodId ? myReservationsSource(uid, periodId) : () => () => {},
   )
   const retry = useCallback(() => {
+    // Without the round there is no list to read, so the round is what failed.
+    if (periodStatus === 'error') restartLive(PERIOD_KEY)
     if (key) restartLive(key)
-  }, [key])
+  }, [key, periodStatus])
 
   const status = periodStatus !== 'ready' ? periodStatus : key ? live.status : 'ready'
   const reservations = live.data ?? NO_RESERVATIONS

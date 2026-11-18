@@ -83,8 +83,10 @@ export function useMyRegistrations() {
   const key = uid ? myRegistrationsKey(uid) : null
   const live = useLive(key, uid ? myRegistrationsSource(uid) : () => () => {})
   const retry = useCallback(() => {
+    // `status` reports the event's failure first, so retry that read as well.
+    if (eventStatus === 'error') restartLive(EVENT_KEY)
     if (key) restartLive(key)
-  }, [key])
+  }, [key, eventStatus])
 
   const status = eventStatus !== 'ready' ? eventStatus : key ? live.status : 'ready'
   const registrations = live.data ?? NO_REGISTRATIONS
