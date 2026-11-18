@@ -114,6 +114,10 @@ const ROUTES: Record<string, { method: 'POST' | 'PUT'; path: (id: string) => str
  * Whatever the outcome, the user's lists are read again afterwards. Firestore
  * pushed the new row (or, after a conflict, the newer version) by itself; a
  * REST server has to be asked.
+ *
+ * A `failed-precondition` means the round or event is not what this screen
+ * shows (closed meanwhile, window over, slot removed), so those settings are
+ * read again as well instead of waiting for the next periodic refresh.
  */
 export async function sendCommand<R extends CommandResponse>(
   request: Record<string, unknown> & { operationId: string },
@@ -127,11 +131,16 @@ export async function sendCommand<R extends CommandResponse>(
   if (!route) throw new CommandError('rejected', 'invalid-argument', '요청을 처리하지 못했어요.', request.operationId)
   const id = key && typeof key === 'object' ? String(Object.values(key)[0] ?? '') : ''
 
+  let settingsChanged = false
   try {
     return await apiSend<R>(route.method, route.path(encodeURIComponent(id)), body)
   } catch (error) {
-    throw classify(error, request.operationId, unknownMessage)
+    const failure = classify(error, request.operationId, unknownMessage)
+    settingsChanged = failure.code === 'failed-precondition'
+    throw failure
   } finally {
-    refreshLive((liveKey) => liveKey.startsWith(`user:${user.uid}:`))
+    refreshLive(
+      (liveKey) => liveKey.startsWith(`user:${user.uid}:`) || (settingsChanged && liveKey.startsWith('doc:settings/')),
+    )
   }
 }
