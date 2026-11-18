@@ -46,7 +46,7 @@ MySQL 권한은 DB 계정 단위다. 테이블과 컬럼 단위로는 제한할 
 
 | 등급 | DB 계정 | `GRANT`의 범위 |
 |---|---|---|
-| 학생 | `gradgown_student` | 테이블마다 따로 준다. `users`의 `UPDATE`만 컬럼 단위(`last_login_at`)다 |
+| 학생 | `gradgown_student` | 테이블마다 따로 준다. `UPDATE`는 모두 컬럼 단위다(아래 "학생 계정의 `UPDATE`를 컬럼 단위로 좁힌다") |
 | 관리자 | `gradgown_admin` | `gradgown.*`에 `SELECT` |
 | 마스터 | `gradgown_master` | `gradgown.*`에 `SELECT`, `INSERT`, `UPDATE`, `DELETE` |
 
@@ -64,7 +64,7 @@ MySQL 권한은 DB 계정 단위다. 테이블과 컬럼 단위로는 제한할 
 | 예약·신청은 클라이언트가 직접 쓸 수 없고 함수만 쓴다 | 브라우저는 DB에 접속하지 않는다. 학생용 서버만 쓴다 |
 | 등록 관리자는 전체를 읽는다 | 관리자 계정에 `SELECT` |
 | 쓰기는 마스터만 한다 (`admin-policy.js`의 권한 표) | 마스터 계정에만 쓰기 권한 |
-| `settings_private`는 일반 사용자가 접근할 수 없다 | 테스터 권한을 넣을지 미정([scope.md](./scope.md)) |
+| `settings_private`는 일반 사용자가 접근할 수 없다 | 테스터 권한을 넣지 않아서 해당하는 표가 없다([scope.md](./scope.md)) |
 
 ## 이유
 

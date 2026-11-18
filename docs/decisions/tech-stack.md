@@ -43,7 +43,7 @@ grad42의 `feat/spring-migration` 브랜치는 JPA와 Querydsl을 쓴다. 이 �
 | `student-server` | 학생용 서버. 학생 DB 계정의 설정과 SQL | `core` |
 | `admin-server` | 관리자용 서버. 조회·마스터 DB 계정의 설정과 SQL | `core` |
 
-SQL과 DB 계정 설정은 `core`에 두지 않고 서버마다 따로 가진다. 그래서 학생용 서버가 마스터 계정의 설정을 참조할 수 없다는 것이 모듈 경계로 지켜진다([정적 계열](../testing/static.md)의 구조 규칙). 지금 있는 모듈은 `db`뿐이고, 나머지는 서버를 만들면서 더한다.
+SQL과 DB 계정 설정은 `core`에 두지 않고 서버마다 따로 가진다. 그래서 학생용 서버가 마스터 계정의 설정을 참조할 수 없다는 것이 모듈 경계로 지켜진다([정적 계열](../testing/static.md)의 구조 규칙). 네 모듈 모두 만들었다(2026-11-18).
 
 ## 빌드 구성 (2026-11-16)
 
@@ -54,9 +54,17 @@ DB 테스트를 JUnit으로 쓰기로 하면서([동적 계열](../testing/dynam
 | 스키마 관리 | 초기화 SQL 파일만 쓴다. 마이그레이션 도구는 쓰지 않는다([mysql-docker.md](./mysql-docker.md)) | 확정 |
 | 빌드 도구 | Gradle. 저장소 루트가 다중 모듈 빌드다 | 잠정 |
 | Java | 21 | 잠정 |
-| Spring Boot | 4.1.2. 2026-11-18 기준 최신 안정 버전이다 | 제안 |
+| Spring Boot | 4.1.2. 2026-11-18 기준 최신 안정 버전이다. 두 서버가 이 버전으로 돈다 | 제안 |
 
 Gradle은 wrapper(`./gradlew`)로 실행한다. 버전은 9.9.1이고, 따로 설치할 필요가 없다.
+
+```sh
+./gradlew test                      # 전체 테스트. Docker가 켜져 있어야 한다
+./gradlew :student-server:bootRun   # 학생용 서버, 127.0.0.1:8080
+./gradlew :admin-server:bootRun     # 관리자용 서버, 127.0.0.1:8081
+```
+
+서버를 띄우려면 개발용 MySQL이 먼저 떠 있어야 한다([mysql-docker.md](./mysql-docker.md)).
 
 ## 미정
 

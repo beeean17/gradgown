@@ -11,20 +11,21 @@
 | [contracts/](./contracts/) | 웹과 서버 사이의 계약. [web-api.md](./contracts/web-api.md)는 초안이다 |
 | [testing/](./testing/) | 테스트 계획. [개요](./testing/README.md), [정적 계열](./testing/static.md), [동적 계열](./testing/dynamic.md). 스키마·권한 테스트의 도구만 확정이고 나머지는 제안이다 |
 
-## 구현 현황 (2026-11-16)
+## 구현 현황 (2026-11-18)
 
-`feat/schema` 브랜치에서 스키마부터 만들었다. 서버와 웹은 아직 없다.
+DB와 서버 둘을 만들었다. 웹은 아직 없다. 실행 방법은 저장소 루트의 [README.md](../README.md)에 있다.
 
 | 무엇 | 어디 | 상태 |
 |---|---|---|
 | 테이블 11개, 공지 뷰, 계정 셋과 `GRANT`, 시드 데이터 | `db/init/*.sql` | MySQL 8.4.13에서 적용됨 |
-| 개발용 MySQL | `compose.yaml`, `db/conf/gradgown.cnf` | 띄워서 확인함. `docker compose up -d --wait` |
-| 스키마·권한 테스트 (동적 계열 1·2층) | `db/src/test/` | 로컬에서 167개 통과. `./gradlew :db:test` |
-| CI | — | 워크플로 없음 |
+| 개발용 MySQL | `compose.yaml`, `db/conf/gradgown.cnf` | 띄워서 확인함 |
+| 도메인 규칙, 입력 검증, 응답 타입 | `core/` | 단위 테스트 통과 |
+| 학생용 서버: 로그인, 조회, 예약·신청 명령 | `student-server/` | 통합·동시성·계약 테스트 통과 |
+| 관리자용 서버: 로그인, 명단 검색, 집계, 접수 열기·닫기 | `admin-server/` | 통합 테스트 통과 |
+| 학생 웹, 관리자 앱 | — | 없음. 가져올 범위가 미정이다 |
+| CI | `.github/workflows/` | 워크플로를 썼지만 GitHub에서 돌려 보지 않았다 |
 
-DDL의 세부는 2026-11-18에 확정했다([data-model.md](./decisions/data-model.md)의 "DDL에서 정한 것").
-
-과제 안내 슬라이드 PDF는 저장소에 넣지 않는다. 로컬의 `docs/course-materials/`에 두고 `.gitignore`로 제외한다. 내용은 [과제 요구사항](./requirements/course-requirements.md)에 쪽 단위로 대조해 두었다.
+테스트는 로컬에서 `./gradlew test`로 돈다(255개). 층별 개수와 방법, 테스트를 쓰지 않은 쪽의 검증에서 나온 결함과 알고도 고치지 않은 것은 [testing/dynamic.md](./testing/dynamic.md)에 있다.
 
 ## 결정 기록
 

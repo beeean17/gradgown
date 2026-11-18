@@ -1,6 +1,6 @@
 # 웹과 서버 사이의 API 계약
 
-- 상태: 초안 (2026-11-14). 학생용과 관리자용 서버를 나누는 것은 확정이다. 경로 이름과 응답 형식은 제안이고, 구현하면서 확정한다
+- 상태: 구현됨 (2026-11-18). 두 서버가 아래 경로를 제공하고 테스트가 응답 모양을 확인한다. 경로 이름과 응답 형식은 확인받지 않은 제안이다. 웹은 아직 이 API를 쓰지 않는다
 - 관련: [admin-server-split.md](../decisions/admin-server-split.md), [db-privileges.md](../decisions/db-privileges.md), [tech-stack.md](../decisions/tech-stack.md), [scope.md](../decisions/scope.md), [test-login.md](../decisions/test-login.md), [data-model.md](../decisions/data-model.md)
 - 근거: grad42 main의 `web/src`, `admin-web/src`, `web/docs/data-and-auth.md`, `docs/contracts/reservation-command.md`, `mentoring-command.md`
 
@@ -62,7 +62,7 @@
 | 관리자 앱 | `data/admin-api.ts`의 `createAdminApi` | 같은 `AdminApi` 타입을 REST로 구현한 것으로 바꾼다 |
 | 관리자 앱 | `auth/useAdminSession.ts` | 테스트 로그인으로 바꾼다 |
 
-## 공통 규칙 (제안)
+## 공통 규칙
 
 | 항목 | 규칙 |
 |---|---|
@@ -75,14 +75,16 @@
 | `version` | 불투명 문자열. 지금은 `modifiedAt`의 `seconds:nanoseconds`이고, 새 서버는 정수 `version` 컬럼 값을 문자열로 준다 |
 | 인증 | 세션 쿠키. 로그인하지 않은 요청은 401 |
 
-## 학생 API (제안)
+## 학생 API (구현됨, 2026-11-18)
+
+학생용 서버(`student-server`)가 제공한다. 회차·행사·공지 읽기와 계정 목록은 로그인 없이 되고, "내" 데이터와 명령은 로그인이 필요하다.
 
 ### 읽기
 
 | 메서드와 경로 | 응답 | 대체하는 것 |
 |---|---|---|
 | `GET /api/gown/periods/current` | `ReservationPeriod` 또는 `null` | `settings/reservation` 구독, `/api/schedule` 엣지 캐시 |
-| `GET /api/gown/reservations/me?periodId=` | `Reservation[]` | `users/{uid}/gown_reservations` 구독 |
+| `GET /api/gown/reservations/me?periodId=` | `Reservation[]`. `periodId`를 빼면 모든 회차 | `users/{uid}/gown_reservations` 구독 |
 | `GET /api/mentoring/events/current` | `MentoringEvent` 또는 `null` | `settings/mentoring` 구독 |
 | `GET /api/mentoring/registrations/me` | `MentoringRegistration[]` | `users/{uid}/mentoring_registrations` 구독 |
 | `GET /api/announcements` | `Announcement[]`. 노출 중인 것만 | `information/announcements` 구독 |
@@ -104,6 +106,23 @@
 | `POST /api/mentoring/registrations/{id}/cancel` | `mentoring.cancel` | `{ operationId, version }` |
 
 - `input`의 필드와 검증 규칙은 `ReservationInput`, `MentoringInput` 그대로다. 예약은 `slotId`, `rentAt`, `returnAt`을 받고, 서버가 반납 시각으로 반납 슬롯을 찾는다.
+- 예약은 대여·반납 슬롯의 ID를 저장한다. 응답의 `rentAt`, `returnAt`은 두 슬롯의 시작 시각이다. 슬롯 안의 다른 시각을 보내도 시작 시각으로 읽힌다.
+- `slotId`와 예약·신청 ID는 DB가 만든 숫자를 문자열로 쓴 것이다. 원본의 `2026-08-10_1000-1030` 같은 형식이 아니다.
+- 형식이 틀린 `operationId`는 감사 로그를 남기지 않고 `invalid-argument`로 거부한다. 원본은 `rejected` 로그를 남겼지만, 여기서는 `operationId`가 감사 로그의 키라서 틀린 값으로는 행을 만들 수 없다. JSON으로 읽을 수 없는 본문도 `operationId`를 알 수 없어서 로그 없이 거부한다.
+
+### 원본의 입력 규칙과 다른 점
+
+| 항목 | 원본 | 이 서버 | 이유 |
+|---|---|---|---|
+| 예약의 `department` | 선택. 보내지 않으면 저장된 값을 유지한다 | 필수(1~60자). 없으면 `invalid-argument` | 원본의 규칙은 학과가 없던 v1(Flutter) 예약을 위한 것이다. 여기에는 그런 예약이 없고 화면은 항상 보낸다 |
+| 숫자와 불리언의 타입 | 타입이 다르면 거부 | `grade`, `firstOption`, `secondOption`은 JSON 정수만, `isProxy`는 JSON 불리언만 받는다. `2.9`나 `"2"`는 거부한다 | 원본과 같다. JSON 라이브러리가 `2.9`를 `2`로 바꿔 받던 것을 막았다 |
+| 문자열 자리에 온 숫자 | 거부 | 받는다. `"name": 123`은 `"123"`으로 저장된다 | 막지 않았다. 화면은 문자열만 보낸다 |
+| 시각의 범위 | 제한 없음 | 1971~2037년 밖이면 `invalid-argument` | `TIMESTAMP`가 담을 수 있는 범위다 |
+| 요청 크기 2만 자 제한 | 있음 | 없음 | 로컬에서만 실행한다 |
+| 이름의 HTML 정리 (RES-31) | 저장할 때 정리 | 하지 않는다 | 화면(React)이 출력할 때 이스케이프한다 |
+| 거부된 변경·취소의 감사 로그 | 대상 예약 ID를 남긴다 | `target_id`가 비어 있다 | 성공한 명령만 대상을 남긴다 |
+
+끝나지 않은 채 남은 `operationId`의 처리는 원본과 같다. 결과가 기록되지 않은 채 2분이 지나면 실패한 것으로 본다.
 - St:talk의 "선택 안함"은 API에서는 기존처럼 `0`이다. DB에 넣을 때 `NULL`로 바꾼다.
 - 성공 응답은 기존과 같다: `{ success: true, operationId, reservationId 또는 registrationId, status, replayed }`.
 - `operationId`의 규칙과 수명은 기존과 같다. 같은 ID로 다시 보내면 이전 성공을 `replayed: true`로 돌려준다.
@@ -127,6 +146,8 @@
 | `failed-precondition` | 422 | 기간 밖, 접수 닫힘, 비활성 슬롯, 취소된 건 |
 | `internal` | 500 | 서버 실패 |
 
+없는 경로는 `not-found`, 받지 않는 메서드나 JSON이 아닌 본문, 타입이 틀린 쿼리 값은 `invalid-argument`(400)로 답한다. 요청의 `Accept`가 무엇이든 오류 본문은 JSON이다. 주소 자체가 잘못된 요청(`%zz` 등)은 서버 코드에 닿기 전에 Tomcat이 HTML 400으로 거부하며, 이것은 위 형식을 따르지 않는다.
+
 ### 인증
 
 | 메서드와 경로 | 내용 |
@@ -138,31 +159,43 @@
 
 네 경로는 두 서버에 각각 있다. 학생용 서버는 학생 계정만, 관리자용 서버는 관리자·마스터 계정만 로그인시킨다.
 
-## 관리자 API (제안)
+## 관리자 API (구현됨, 2026-11-18)
 
-관리자용 서버가 제공한다. [scope.md](../decisions/scope.md)에서 포함하기로 한 조회만 적는다. 조회는 읽기 권한만 있는 관리자 DB 계정으로 실행한다([db-privileges.md](../decisions/db-privileges.md)).
+관리자용 서버(`admin-server`)가 제공한다. 모든 경로는 로그인이 필요하다. 요청은 로그인한 사람의 등급에 맞는 DB 계정으로 실행된다([admin-server-split.md](../decisions/admin-server-split.md)).
 
-| 메서드와 경로 | 대체하는 것 | 달라지는 점 |
+관리자 앱을 아직 가져오지 않아서, 응답 모양은 원본 관리자 앱의 타입이 아니라 이 서버가 정한 것이다. 앱을 가져올 때 바뀔 수 있다.
+
+### 조회
+
+| 메서드와 경로 | 응답 | 대체하는 것과 달라지는 점 |
 |---|---|---|
-| `GET /api/admin/gown/periods/current` | `getSettings()` | — |
-| `GET /api/admin/gown/reservations?periodId=&q=&status=&cursor=` | `listReservations()` | 검색과 상태 필터를 서버가 페이지네이션 전에 적용한다 |
-| `GET /api/admin/mentoring/events/current` | `getMentoringSettings()` | — |
-| `GET /api/admin/mentoring/registrations?eventId=&q=&status=&first=&second=` | `listMentoring()` | 필터를 서버가 적용한다 |
-| `GET /api/admin/mentoring/counts?eventId=` | 브라우저의 집계 | 선택지 × 차시 인원을 서버가 `GROUP BY`로 센다 |
-| `GET /api/admin/announcements`, `GET /api/admin/faqs` | `getContent(kind)` | 숨김 항목 포함 |
-| `GET /api/admin/audit-logs?domain=&outcome=&cursor=` | `listAudit()` | 최근 200건 제한 없이 서버 필터 |
+| `GET /api/admin/gown/periods` | 회차 목록. 회차마다 접수 상태, 기간, 슬롯 수, 유효 예약 수 | 원본에는 현재 회차 하나만 있었다. 지난 회차도 나온다 |
+| `GET /api/admin/gown/periods/current` | 현재 회차 하나 또는 `null` | `getSettings()` |
+| `GET /api/admin/gown/reservations?periodId=&q=&status=&cursor=&limit=` | `{ items, nextCursor }` | `listReservations()`. 검색(이름·학번·전화)과 상태 필터를 서버가 페이지를 자르기 전에 적용한다. `periodId`를 빼면 현재 회차다 |
+| `GET /api/admin/mentoring/events` | 행사 목록. 행사마다 접수 상태, 기간, 선택지 이름 7개, 유효 신청 수 | 원본에는 현재 행사 하나만 있었다 |
+| `GET /api/admin/mentoring/events/current` | 현재 행사 하나 또는 `null` | `getMentoringSettings()` |
+| `GET /api/admin/mentoring/registrations?eventId=&q=&status=&first=&second=` | 신청 배열 | `listMentoring()`. 필터를 서버가 적용한다. `first`·`second`는 0~7이고 0은 "선택 안함"이다 |
+| `GET /api/admin/mentoring/counts?eventId=` | `[{ option, name, first, second }]` 8행 (선택지 1~7, 그리고 0 = 선택 안함) | 브라우저의 집계. 서버가 `GROUP BY` 한 번으로 센다. 취소 건은 세지 않는다 |
+| `GET /api/admin/announcements` | `Announcement[]`. 숨김 항목 포함 | `getContent('announcements')` |
+| `GET /api/admin/faqs` | FAQ 배열. 태그 포함 | `getContent('faq')` |
+| `GET /api/admin/audit-logs?domain=&outcome=&cursor=&limit=` | `{ items, nextCursor }` | `listAudit()`. 최근 200건 제한 없이 서버가 거르고 나눈다 |
 
-### 쓰기 (제안)
+- **페이지 나누기.** `limit`은 기본 50, 최대 200이다. 응답의 `nextCursor`를 다음 요청의 `cursor`로 보낸다. 마지막 페이지에서는 `null`이다. 커서는 마지막 행의 키라서, 페이지를 넘기는 사이에 새 행이 생겨도 겹치거나 빠지지 않는다.
+- 예약과 신청의 행에는 신청자의 `userId`와 `email`이 함께 온다. 이메일은 `users`와 조인해서 읽는다.
+
+### 쓰기
 
 관리자 쪽의 쓰기는 접수 열기·닫기뿐이다([scope.md](../decisions/scope.md)).
 
 | 메서드와 경로 | 본문 | 내용 |
 |---|---|---|
-| `PUT /api/admin/gown/periods/{periodId}/open` | `{ isOpen }` | 회차의 접수를 켜거나 끈다 |
-| `PUT /api/admin/mentoring/events/{eventId}/open` | `{ isOpen }` | 행사의 접수를 켜거나 끈다. 켜려면 선택지 7개 모두 이름이 있어야 한다(MNT-51). 아니면 `failed-precondition` |
+| `PUT /api/admin/gown/periods/{periodId}/open` | `{ isOpen }` | 회차의 접수를 켜거나 끈다. 응답 `{ success, periodId, isOpen }` |
+| `PUT /api/admin/mentoring/events/{eventId}/open` | `{ isOpen }` | 행사의 접수를 켜거나 끈다. 켜려면 선택지 7개 모두 이름이 있어야 한다(MNT-51). 아니면 `failed-precondition`이고 값은 바뀌지 않는다 |
 
 - 마스터로 로그인했을 때만 된다. 관리자로 로그인하면 `permission-denied`(403)다.
-- 이 거부는 서버 코드가 아니라 MySQL이 한다. 관리자의 요청은 읽기 권한만 있는 DB 계정으로 실행되고, MySQL의 오류 1142를 서버가 `permission-denied`로 바꾼다([admin-server-split.md](../decisions/admin-server-split.md)).
+- 이 거부는 서버 코드가 아니라 MySQL이 한다. 관리자의 요청은 읽기 권한만 있는 DB 계정으로 실행되고, MySQL의 오류 1142를 서버가 `permission-denied`로 바꾼다.
+- 없는 회차나 행사는 `not-found`다.
+- 접수 열기·닫기는 감사 로그에 남지 않는다. `audit_logs`는 학생 명령을 기록하도록 만든 표다([data-model.md](../decisions/data-model.md)).
 
 ## 계약에서 빠지는 것
 
@@ -180,8 +213,8 @@
 
 ## 확인할 것
 
-- 응답을 화면 타입 그대로 줄지, Firestore 문서 모양을 흉내 내 매퍼를 남길지. 초안은 앞쪽이다.
-- `failed-precondition`의 HTTP 상태(409와 422 중).
-- 관리자 앱의 어느 화면까지 가져올지.
+- 응답은 화면 타입 그대로 준다(구현함). 웹을 가져올 때 실제 화면에서 맞는지 확인해야 한다.
+- `failed-precondition`의 HTTP 상태는 422로 구현했다. 확인받지 않았다.
+- 관리자 앱의 어느 화면까지 가져올지. 그에 따라 관리자 API의 응답 모양이 바뀔 수 있다.
 
 DB가 권한 오류로 거부한 요청은 `permission-denied`로 돌려주기로 확정했다(2026-11-18).

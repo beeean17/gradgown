@@ -1,6 +1,6 @@
 # Google 로그인 대신 테스트 계정으로 로그인한다
 
-- 상태: 확정 (2026-11-13). 방식은 2026-11-18에 확정했다. 아직 구현하지 않았다
+- 상태: 확정 (2026-11-13). 방식은 2026-11-18에 확정하고 두 서버에 구현했다. 로그인 화면은 아직 없다
 - 관련: [scope.md](./scope.md), [project-positioning.md](./project-positioning.md), [data-model.md](./data-model.md)
 
 ## 결정

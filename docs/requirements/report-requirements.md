@@ -20,15 +20,15 @@
 
 | 판정 | 항목 수 | 항목 |
 |---|---|---|
-| 준비됨 | 6 | RPT-21, 23, 31, 41, 47, 54 |
-| 일부 | 9 | RPT-3, 10, 20, 22, 25, 30, 40, 43, 70 |
-| 구현 필요 | 8 | RPT-24, 44, 45, 46, 50, 51, 52, 53 |
+| 준비됨 | 8 | RPT-21, 23, 31, 41, 44, 45, 47, 54 |
+| 일부 | 11 | RPT-3, 10, 20, 22, 25, 30, 40, 43, 46, 50, 70 |
+| 구현 필요 | 4 | RPT-24, 51, 52, 53 |
 | 없음 | 4 | RPT-2, 26, 42, 60 |
 | 확인 필요 | 1 | RPT-1 |
 
 설계의 근거와 한계는 준비됐다. 빠진 것은 세 부류다.
 
-1. **구현과 실행 결과.** 코드가 없어서 DB 연결, DB 연동 코드, 실행 결과, 수치를 쓸 수 없다.
+1. **평가의 수치와 화면.** DB와 서버는 만들었다(2026-11-18). 조회 구조를 비교하는 측정(읽는 행 수, 실행 계획)은 하지 않았고, 웹이 없어서 화면도 없다.
 2. **그림.** ER 다이어그램과 전체 구조 그림이 없다. ER 모델은 슬라이드가 보고서 구성 예시와 General Advice에서 거듭 요구하고, 예시 보고서 세 개가 모두 실은 항목이다.
 3. **글의 뼈대.** 보고서 개요, 참고 문헌, Contribution 문장이 없다.
 
@@ -38,7 +38,7 @@
 |---|---|---|---|---|---|
 | RPT-1 | 분량은 6쪽이다 | 필수 | 1번 4쪽 | 확인 필요 | 6쪽이 상한인지, 부록이 포함되는지 모른다. 두 서비스를 다 구현하므로 분량이 빠듯하다. 기능 흐름은 한 서비스만 자세히 쓰기로 했다([scope.md](../decisions/scope.md)) |
 | RPT-2 | Abstract and Introduction, Background and Motivation, Design and Implementation, Evaluation, Conclusion으로 구성한다 | 필수 | 1번 4쪽 | 없음 | 보고서 개요를 쓰지 않았다. 보고서 언어도 정하지 않았다 |
-| RPT-3 | 프로젝트, DB 스키마, DB와 상호작용하는 코드를 설명한다 | 필수 | 1번 4쪽 | 일부 | 프로젝트 설명은 있다([topic.md](../decisions/topic.md), [scope.md](../decisions/scope.md)). 스키마는 초안이다. 코드는 없다 |
+| RPT-3 | 프로젝트, DB 스키마, DB와 상호작용하는 코드를 설명한다 | 필수 | 1번 4쪽 | 일부 | 프로젝트 설명은 있다([topic.md](../decisions/topic.md), [scope.md](../decisions/scope.md)). 스키마는 DDL로 있고 세부를 확정했다. DB와 상호작용하는 코드는 두 서버의 저장소 클래스에 SQL로 있다(2026-11-18). 보고서의 글로 옮기지 않았다 |
 
 ## Abstract
 
@@ -75,16 +75,16 @@
 | RPT-41 | 세부 설계를 절로 나눠 설명한다 | 필수 | 1번 9쪽 | 준비됨 | 데이터 모델, 제약, 권한, API 계약([data-model.md](../decisions/data-model.md), [db-privileges.md](../decisions/db-privileges.md), [API 계약](../contracts/web-api.md)) |
 | RPT-42 | ER 모델 | 필수 | 1번 14쪽, 4번 7쪽, 14쪽, 23쪽 | 없음 | 관계를 글로만 적었다([data-model.md](../decisions/data-model.md) "관계"). ER 다이어그램이 없다 |
 | RPT-43 | DB 스키마: 테이블, 컬럼, 타입, PK와 FK | 필수 | 1번 4쪽, 4번 14쪽, 20쪽 | 일부 | DDL이 `db/init/01-schema.sql`에 있고 MySQL 8.4.13에서 제약이 동작하는 것을 테스트로 확인했다(2026-11-16). DDL의 세부는 2026-11-18에 확정했다([data-model.md](../decisions/data-model.md)). 보고서에 실을 표와 ER 다이어그램은 아직 없다 |
-| RPT-44 | DB에 어떻게 연결하는지 | 필수 | 1번 14쪽, 4번 8쪽 | 구현 필요 | 등급별 계정으로 접속한다는 결정만 있다([db-privileges.md](../decisions/db-privileges.md)) |
-| RPT-45 | 구현을 실제 코드로 설명한다. DB와 상호작용하는 코드 | 필수 | 1번 10쪽, 4번 9쪽, 15~16쪽, 23쪽 | 구현 필요 | 코드가 없다. SQL이 보고서에 드러나게 한다는 원칙은 정했다([tech-stack.md](../decisions/tech-stack.md)) |
-| RPT-46 | 읽은 사람이 재현할 수 있어야 한다 | 필수 | 1번 10쪽 | 구현 필요 | Docker로 DB를 띄우고 CI에서 처음부터 돌린다는 결정이 있다([mysql-docker.md](../decisions/mysql-docker.md), [ci.md](../decisions/ci.md)). 실행 방법 문서는 코드가 생기면 쓴다 |
+| RPT-44 | DB에 어떻게 연결하는지 | 필수 | 1번 14쪽, 4번 8쪽 | 준비됨 | 두 서버가 Spring JDBC로 접속한다. 학생용 서버는 학생 계정 하나, 관리자용 서버는 조회 계정과 마스터 계정의 연결 풀 둘을 두고 로그인한 사람의 등급으로 고른다(`admin-server`의 `RoleRoutingDataSource`, [admin-server-split.md](../decisions/admin-server-split.md)). 접속 설정은 각 서버의 `application.properties`에 있다 |
+| RPT-45 | 구현을 실제 코드로 설명한다. DB와 상호작용하는 코드 | 필수 | 1번 10쪽, 4번 9쪽, 15~16쪽, 23쪽 | 준비됨 | SQL을 직접 쓴 저장소 클래스가 있다(`student-server`와 `admin-server`의 `repository` 패키지). 실을 만한 것: 유효 예약 하나를 UNIQUE 위반(1062)으로 받는 `INSERT`, `version`을 `WHERE`에 넣은 `UPDATE`, 슬롯을 두 번 조인하는 내 예약 조회, 검색과 키 기반 페이지 나누기, `GROUP BY` 한 번의 집계, `JSON_TABLE`. 어느 것을 실을지 고르지 않았다 |
+| RPT-46 | 읽은 사람이 재현할 수 있어야 한다 | 필수 | 1번 10쪽 | 일부 | 실행 방법이 저장소 루트의 `README.md`에 있다: `docker compose up`, 서버 둘의 `bootRun`, `./gradlew test`. 개발 머신에서는 확인했다. 다른 환경에서의 재현은 CI가 확인할 텐데, 워크플로를 GitHub에서 돌려 보지 않았다 |
 | RPT-47 | 단점, 안정성, 견고성 | 필수 | 1번 11쪽 | 준비됨 | 실시간 구독이 없어짐, 사용자 간 경계가 서버 코드의 책임이 됨, 인증과 호스팅을 생략함([evaluation.md](../decisions/evaluation.md) "한계로 적을 것", [db-privileges.md](../decisions/db-privileges.md) "한계") |
 
 ## Evaluation
 
 | ID | 요구 | 강도 | 근거 | 판정 | 현황 |
 |---|---|---|---|---|---|
-| RPT-50 | 실행 결과를 보인다 | 필수 | 1번 14쪽, 4번 9~10쪽, 23쪽 | 구현 필요 | 무엇을 실행해 보일지는 정했다: 제약 위반의 거부, 권한 위반의 거부, 동시 요청([동적 계열](../testing/dynamic.md) 1, 2, 5층). 결과가 없다 |
+| RPT-50 | 실행 결과를 보인다 | 필수 | 1번 14쪽, 4번 9~10쪽, 23쪽 | 일부 | 제약 위반의 거부, 권한 위반의 거부, 동시 요청은 테스트로 실행했고 통과한다([동적 계열](../testing/dynamic.md) 1, 2, 5층). 보고서에 실을 형태(출력이나 표)로 뽑지 않았다. 웹이 없어서 화면은 없다 |
 | RPT-51 | 결과가 왜 그렇게 나왔는지 설명한다 | 필수 | 1번 12쪽 | 구현 필요 | 이유의 설명은 준비돼 있다(UNIQUE와 생성 컬럼, 복합 FK, `GRANT`). 결과가 있어야 붙일 수 있다 |
 | RPT-52 | 횟수나 시간 같은 수치로 분석한다 | 필수 | 1번 12쪽 | 구현 필요 | 지표는 정했다: 읽는 행 수, 요청 왕복 횟수, 응답 크기, 실행 계획([evaluation.md](../decisions/evaluation.md)). 어느 항목을 잴지, 합성 데이터의 규모는 미정이다 |
 | RPT-53 | 기존 방식과 비교한다 | 필수 | 1번 13쪽 | 구현 필요 | 비교 대상은 Firebase 버전이다. Firebase 쪽 수치를 어떻게 얻을지 미정이다([evaluation.md](../decisions/evaluation.md) "미정") |
@@ -95,7 +95,7 @@
 | ID | 요구 | 강도 | 근거 | 판정 | 현황 |
 |---|---|---|---|---|---|
 | RPT-60 | Conclusion | 필수 | 1번 4쪽 | 없음 | 평가가 끝나야 쓴다 |
-| RPT-70 | 프로젝트에서 얻은 발견과 더 잘할 수 있었던 점 | 필수 | 4번 23쪽 | 일부 | 설계 단계의 발견은 있다: 숨김 공지가 공개로 읽히던 점, 원본 문서와 코드가 어긋난 점(FAQ 화면), MySQL 권한이 행 단위를 막지 못하는 점. 구현하면서 얻은 발견은 [data-model.md](../decisions/data-model.md)의 "구현하면서 알게 된 것"과 [mysql-docker.md](../decisions/mysql-docker.md)의 "띄워 보고 알게 된 것"에 기록하기 시작했다: `TIMESTAMP`의 2038년 한계, 초기화 스크립트의 시간대 문제를 테스트가 잡은 일. 계속 기록해 둬야 한다 |
+| RPT-70 | 프로젝트에서 얻은 발견과 더 잘할 수 있었던 점 | 필수 | 4번 23쪽 | 일부 | 설계 단계의 발견은 있다: 숨김 공지가 공개로 읽히던 점, 원본 문서와 코드가 어긋난 점(FAQ 화면), MySQL 권한이 행 단위를 막지 못하는 점. 구현하면서 얻은 발견도 기록했다: `TIMESTAMP`의 2038년 한계와 초기화 스크립트의 시간대 문제([data-model.md](../decisions/data-model.md) "구현하면서 알게 된 것"), 세션 쿠키 이름과 스레드에 남는 등급([admin-server-split.md](../decisions/admin-server-split.md)), 자동 테스트가 놓친 결함을 별도 검증이 찾은 일과 그 공통점([동적 계열](../testing/dynamic.md) "테스트를 쓴 사람이 아닌 쪽의 검증"). 더 잘할 수 있었던 점은 정리하지 않았다 |
 
 ## 지금 할 수 있는 것
 
