@@ -1,6 +1,6 @@
 # 테스트
 
-- 상태: 제안 (2026-11-14). 2026-11-16에 스키마와 권한 테스트(동적 계열 1·2층)를 JUnit과 Testcontainers로 쓰기로 확정했다. 서버 두 개의 단위·통합·동시성·계약 테스트까지 255개가 통과한다(2026-11-18). 브라우저 테스트와 정적 검사 도구는 정해지지 않았다
+- 상태: 제안 (2026-11-14). 2026-11-16에 스키마와 권한 테스트(동적 계열 1·2층)를 JUnit과 Testcontainers로 쓰기로 확정했다. 서버 두 개의 단위·통합·동시성·계약 테스트까지 257개가 통과한다(2026-11-18). 브라우저 테스트와 정적 검사 도구는 정해지지 않았다
 - 관련: [data-model.md](../decisions/data-model.md), [db-privileges.md](../decisions/db-privileges.md), [evaluation.md](../decisions/evaluation.md), [API 계약](../contracts/web-api.md)
 
 검사를 두 계열로 나눈다.

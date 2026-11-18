@@ -10,3 +10,6 @@ build/
 
 # Working copies of Claude Code agents
 .claude/worktrees/
+
+# Screenshots from browser checks. Kept locally, not committed.
+artifacts/

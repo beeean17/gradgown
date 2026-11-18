@@ -118,6 +118,7 @@ Firestore의 문서, 하위 컬렉션, 중첩 map을 **테이블 11개**로 정�
 | `audit_logs.target_id` | FK를 걸지 않는다 | 마스터가 예약을 영구 삭제해도 로그는 남아야 한다 |
 | `audit_logs`의 컬럼 | 원본의 `stage`, `severity`, `retryable`, `resolved*`, `origin`, `targetUserId`는 뺐다 | 학생 명령만 기록하는 범위에서는 쓰이지 않는다 |
 | 신청의 이메일 | `mentoring_registrations`에 컬럼을 두지 않는다. 명단을 만들 때 `users`와 조인한다 | 원본은 서버가 로그인 계정의 이메일을 신청마다 복사했다. 그 값은 항상 `users.email`과 같으므로 같은 사실을 두 곳에 두지 않는다. 초안에는 컬럼이 있었다 |
+| `announcements.category` | 기본값은 `'일반'`이다 | 원본 웹이 분류가 없는 공지를 `일반`으로 보였다. 값은 화면에 그대로 나오므로 시드도 한글 분류를 쓴다 |
 | `announcements.show_on_home` | 추가했다 | 화면 타입 `Announcement.showOnHome`(원본의 `showOnToggle`)이 쓴다 |
 | 보조 인덱스 | 제약(PK, UNIQUE, FK)이 만드는 인덱스만 있다 | 조회 쿼리를 쓰고 실행 계획을 본 뒤에 더한다([evaluation.md](./evaluation.md)) |
 

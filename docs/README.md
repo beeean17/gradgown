@@ -13,7 +13,7 @@
 
 ## 구현 현황 (2026-11-18)
 
-DB와 서버 둘을 만들었다. 웹은 아직 없다. 실행 방법은 저장소 루트의 [README.md](../README.md)에 있다.
+DB, 서버 둘, 웹 둘을 만들었다. 실행 방법은 저장소 루트의 [README.md](../README.md)에 있다.
 
 | 무엇 | 어디 | 상태 |
 |---|---|---|
@@ -22,10 +22,11 @@ DB와 서버 둘을 만들었다. 웹은 아직 없다. 실행 방법은 저장�
 | 도메인 규칙, 입력 검증, 응답 타입 | `core/` | 단위 테스트 통과 |
 | 학생용 서버: 로그인, 조회, 예약·신청 명령 | `student-server/` | 통합·동시성·계약 테스트 통과 |
 | 관리자용 서버: 로그인, 명단 검색, 집계, 접수 열기·닫기 | `admin-server/` | 통합 테스트 통과 |
-| 학생 웹, 관리자 앱 | — | 없음. 가져올 범위가 미정이다 |
+| 학생 웹 | `web/` | 원본을 가져와 데이터 계층을 학생용 서버로 바꿈. 타입·린트·빌드 통과. 브라우저에서 흐름 확인 |
+| 관리자 앱 | `admin-web/` | 원본을 가져와 관리자용 서버로 바꾸고 범위 밖 화면을 없앰. 타입·린트·빌드 통과. 브라우저에서 조회 흐름 확인 |
 | CI | `.github/workflows/` | 워크플로를 썼지만 GitHub에서 돌려 보지 않았다 |
 
-테스트는 로컬에서 `./gradlew test`로 돈다(255개). 층별 개수와 방법, 테스트를 쓰지 않은 쪽의 검증에서 나온 결함과 알고도 고치지 않은 것은 [testing/dynamic.md](./testing/dynamic.md)에 있다.
+테스트는 로컬에서 `./gradlew test`로 돈다(257개). 층별 개수와 방법, 테스트를 쓰지 않은 쪽의 검증에서 나온 결함과 알고도 고치지 않은 것은 [testing/dynamic.md](./testing/dynamic.md)에 있다.
 
 ## 결정 기록
 
@@ -38,6 +39,7 @@ DB와 서버 둘을 만들었다. 웹은 아직 없다. 실행 방법은 저장�
 | 학위복 대여와 St:talk 두 서비스를 모두 구현한다 | 확정 | [scope.md](./decisions/scope.md) |
 | MySQL과 Spring Boot로 만든다 | DB 확정, 나머지 잠정 | [tech-stack.md](./decisions/tech-stack.md) |
 | 서버는 Spring JDBC(`JdbcClient`)로 DB에 접근한다. SQL을 직접 쓴다 | 확정 | [tech-stack.md](./decisions/tech-stack.md) |
+| 학생 웹과 관리자 앱을 둘 다 가져온다. 단체의 이름·문의 채널·약관 문구는 원본 그대로 둔다 | 확정 | [tech-stack.md](./decisions/tech-stack.md) |
 | 모듈은 `db`, `core`, `student-server`, `admin-server`로 둔다 | 확정 | [tech-stack.md](./decisions/tech-stack.md) |
 | localhost에서만 실행한다 | 확정 | [local-only.md](./decisions/local-only.md) |
 | MySQL은 Docker 컨테이너로 띄운다 | 확정 (구성은 제안) | [mysql-docker.md](./decisions/mysql-docker.md) |
@@ -63,7 +65,7 @@ DB와 서버 둘을 만들었다. 웹은 아직 없다. 실행 방법은 저장�
 |---|---|
 | 개발용 DB의 데이터를 남길지, 이미지 태그를 패치 버전까지 고정할지 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 보고서의 분량 기준·언어, 개요, ER 다이어그램, 참고 문헌 | [requirements/report-requirements.md](./requirements/report-requirements.md) |
-| Spring Boot 버전, 프론트를 가져올 범위 | [tech-stack.md](./decisions/tech-stack.md) |
+| Spring Boot 버전 | [tech-stack.md](./decisions/tech-stack.md) |
 | API의 경로 이름과 응답 모양, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
 | 두 서버의 포트 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | 정적 검사 도구, 서버를 띄우는 테스트에서 DB를 되돌리는 방법, 브라우저 테스트 자동화 | [testing/README.md](./testing/README.md) |

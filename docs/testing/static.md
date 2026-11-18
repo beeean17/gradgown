@@ -43,7 +43,14 @@ SQL은 정적으로 확인할 수 있는 것이 적다. 제약과 권한이 실�
 
 ## 웹 (TypeScript)
 
-원본에 이미 있는 검사를 그대로 쓴다.
+원본에 이미 있는 검사를 그대로 쓴다. 학생 웹과 관리자 앱에서 돌아간다(2026-11-18). 관리자 앱은 `admin-web`에서 `npx tsc --noEmit`, `npx oxlint src`이고, 잔존 검사는 같다.
+
+```sh
+cd web
+npx tsc -b                                        # 타입
+npx oxlint                                        # 린트
+! grep -rnE "from ['\"]firebase|firebase/" src   # Firebase 잔존 검사. 아무것도 나오지 않아야 한다
+```
 
 | 검사 | 무엇을 잡나 | 도구 |
 |---|---|---|

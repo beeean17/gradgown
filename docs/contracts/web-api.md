@@ -1,6 +1,6 @@
 # 웹과 서버 사이의 API 계약
 
-- 상태: 구현됨 (2026-11-18). 두 서버가 아래 경로를 제공하고 테스트가 응답 모양을 확인한다. 경로 이름과 응답 형식은 확인받지 않은 제안이다. 웹은 아직 이 API를 쓰지 않는다
+- 상태: 구현됨 (2026-11-18). 두 서버가 아래 경로를 제공하고 테스트가 응답 모양을 확인한다. 학생 웹과 관리자 앱이 이 API를 쓴다. 경로 이름과 응답 형식은 확인받지 않은 제안이다
 - 관련: [admin-server-split.md](../decisions/admin-server-split.md), [db-privileges.md](../decisions/db-privileges.md), [tech-stack.md](../decisions/tech-stack.md), [scope.md](../decisions/scope.md), [test-login.md](../decisions/test-login.md), [data-model.md](../decisions/data-model.md)
 - 근거: grad42 main의 `web/src`, `admin-web/src`, `web/docs/data-and-auth.md`, `docs/contracts/reservation-command.md`, `mentoring-command.md`
 
@@ -51,7 +51,7 @@
 
 ## 바꿔 끼울 지점
 
-두 앱 모두 데이터 접근이 몇 군데에 모여 있어서 화면 코드는 건드리지 않아도 된다.
+두 앱 모두 데이터 접근이 몇 군데에 모여 있어서 화면 코드는 건드리지 않아도 된다. 학생 웹은 2026-11-18에 아래 표대로 바꿨다([tech-stack.md](../decisions/tech-stack.md)의 "학생 웹에서 바뀐 것").
 
 | 앱 | 경계 | 바꾸는 방법 |
 |---|---|---|
@@ -163,7 +163,7 @@
 
 관리자용 서버(`admin-server`)가 제공한다. 모든 경로는 로그인이 필요하다. 요청은 로그인한 사람의 등급에 맞는 DB 계정으로 실행된다([admin-server-split.md](../decisions/admin-server-split.md)).
 
-관리자 앱을 아직 가져오지 않아서, 응답 모양은 원본 관리자 앱의 타입이 아니라 이 서버가 정한 것이다. 앱을 가져올 때 바뀔 수 있다.
+응답 모양은 원본 관리자 앱의 타입이 아니라 이 서버가 정한 것이다. 관리자 앱을 가져오면서 앱 쪽을 이 모양에 맞췄고, 화면에 필요한 것 두 가지(슬롯 목록, 행사의 차시·안내 문구)를 서버에 더했다.
 
 ### 조회
 
@@ -171,8 +171,9 @@
 |---|---|---|
 | `GET /api/admin/gown/periods` | 회차 목록. 회차마다 접수 상태, 기간, 슬롯 수, 유효 예약 수 | 원본에는 현재 회차 하나만 있었다. 지난 회차도 나온다 |
 | `GET /api/admin/gown/periods/current` | 현재 회차 하나 또는 `null` | `getSettings()` |
+| `GET /api/admin/gown/slots?periodId=` | `[{ slotId, periodId, startsAt, endsAt, enabled }]`. 시간순이고 꺼진 슬롯도 나온다. `periodId`를 빼면 현재 회차다 | `getSettings()`의 `slotsByDate` |
 | `GET /api/admin/gown/reservations?periodId=&q=&status=&cursor=&limit=` | `{ items, nextCursor }` | `listReservations()`. 검색(이름·학번·전화)과 상태 필터를 서버가 페이지를 자르기 전에 적용한다. `periodId`를 빼면 현재 회차다 |
-| `GET /api/admin/mentoring/events` | 행사 목록. 행사마다 접수 상태, 기간, 선택지 이름 7개, 유효 신청 수 | 원본에는 현재 행사 하나만 있었다 |
+| `GET /api/admin/mentoring/events` | 행사 목록. 행사마다 접수 상태, 기간, 날짜와 장소, 차시, 선택지 이름 7개, 소개와 유의사항, EPIC Folio 링크, 유효 신청 수 | 원본에는 현재 행사 하나만 있었다 |
 | `GET /api/admin/mentoring/events/current` | 현재 행사 하나 또는 `null` | `getMentoringSettings()` |
 | `GET /api/admin/mentoring/registrations?eventId=&q=&status=&first=&second=` | 신청 배열 | `listMentoring()`. 필터를 서버가 적용한다. `first`·`second`는 0~7이고 0은 "선택 안함"이다 |
 | `GET /api/admin/mentoring/counts?eventId=` | `[{ option, name, first, second }]` 8행 (선택지 1~7, 그리고 0 = 선택 안함) | 브라우저의 집계. 서버가 `GROUP BY` 한 번으로 센다. 취소 건은 세지 않는다 |
@@ -201,7 +202,7 @@
 
 | 기존 접점 | 처리 |
 |---|---|
-| 실시간 구독 | 없앤다. 화면에 들어올 때와 명령이 성공한 뒤에 다시 읽는다(`restartLive`) |
+| 실시간 구독 | 없앴다. 화면에 들어올 때, 30초마다, 탭이 다시 보일 때, 명령이 끝난 뒤에 다시 읽는다(`fetchSource`, `refreshLive`). 관리자가 접수를 닫으면 열려 있는 화면에는 길게는 30초 뒤에 반영된다 |
 | `/api/schedule` 엣지 캐시 | 없앤다. 서버를 바로 읽는다 |
 | App Check(reCAPTCHA) | 없앤다 |
 | `users/{uid}` 프로필 생성 | 없앤다. 계정은 시드 데이터에 있다 |
@@ -215,6 +216,6 @@
 
 - 응답은 화면 타입 그대로 준다(구현함). 웹을 가져올 때 실제 화면에서 맞는지 확인해야 한다.
 - `failed-precondition`의 HTTP 상태는 422로 구현했다. 확인받지 않았다.
-- 관리자 앱의 어느 화면까지 가져올지. 그에 따라 관리자 API의 응답 모양이 바뀔 수 있다.
+- 관리자 API의 응답 모양. 관리자 앱이 쓰고 있지만 확인받지 않았다.
 
 DB가 권한 오류로 거부한 요청은 `permission-denied`로 돌려주기로 확정했다(2026-11-18).
