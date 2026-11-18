@@ -28,6 +28,47 @@ jobs:
       # Compiler warnings are errors in every module.
       - run: ./gradlew compileJava compileTestJava compileTestFixturesJava
 
+  web:
+    name: Student web checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.node-version
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx tsc -b
+      - run: npx oxlint
+      - run: npx vite build
+      # The move off Firebase is done when nothing imports it any more.
+      - name: No Firebase import is left
+        run: "! grep -rnE \"from ['\\\"]firebase|firebase/\" src"
+
+  admin-web:
+    name: Admin app checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.node-version
+          cache: npm
+          cache-dependency-path: admin-web/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx oxlint src
+      - run: npx vite build
+      - name: No Firebase import is left
+        run: "! grep -rnE \"from ['\\\"]firebase|firebase/\" src"
+
   dynamic:
     name: Tests on MySQL
     needs: static
