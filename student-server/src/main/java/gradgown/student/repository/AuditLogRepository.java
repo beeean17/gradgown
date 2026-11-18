@@ -1,0 +1,80 @@
+package gradgown.student.repository;
+
+import java.util.Optional;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Repository;
+
+/**
+ * The audit log of commands. Its primary key, the operation ID, is what makes a command run once
+ * (RES-25, MNT-24). No input value (name, student ID, phone) is written here (RES-32, MNT-27).
+ */
+@Repository
+public class AuditLogRepository {
+
+  public record Entry(long actorId, String action, String outcome, Long targetId) {}
+
+  private final JdbcClient jdbc;
+
+  public AuditLogRepository(JdbcClient jdbc) {
+    this.jdbc = jdbc;
+  }
+
+  /**
+   * Records that a command arrived. If the operation ID was used before, the primary key rejects
+   * the row with MySQL error 1062.
+   */
+  public void insertReceived(String operationId, String domain, String action, long actorId) {
+    jdbc.sql(
+            """
+            INSERT INTO audit_logs (operation_id, domain, action, actor_id, outcome)
+            VALUES (?, ?, ?, ?, 'received')
+            """)
+        .param(operationId)
+        .param(domain)
+        .param(action)
+        .param(actorId)
+        .update();
+  }
+
+  public Optional<Entry> find(String operationId) {
+    return jdbc.sql(
+            "SELECT actor_id, action, outcome, target_id FROM audit_logs WHERE operation_id = ?")
+        .param(operationId)
+        .query(
+            (row, n) ->
+                new Entry(
+                    row.getLong("actor_id"),
+                    row.getString("action"),
+                    row.getString("outcome"),
+                    row.getObject("target_id", Long.class)))
+        .optional();
+  }
+
+  /** Runs in the same transaction as the change it records. */
+  public void markSucceeded(String operationId, long targetId) {
+    jdbc.sql(
+            """
+            UPDATE audit_logs
+            SET outcome = 'succeeded', target_id = ?, completed_at = CURRENT_TIMESTAMP(3)
+            WHERE operation_id = ?
+            """)
+        .param(targetId)
+        .param(operationId)
+        .update();
+  }
+
+  /** {@code outcome} is {@code rejected} (the request's fault) or {@code failed} (the server's). */
+  public void markEnded(String operationId, String outcome, String failureKind, String errorCode) {
+    jdbc.sql(
+            """
+            UPDATE audit_logs
+            SET outcome = ?, failure_kind = ?, error_code = ?, completed_at = CURRENT_TIMESTAMP(3)
+            WHERE operation_id = ?
+            """)
+        .param(outcome)
+        .param(failureKind)
+        .param(errorCode)
+        .param(operationId)
+        .update();
+  }
+}
