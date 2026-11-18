@@ -7,3 +7,6 @@ docs/course-materials/
 # Gradle
 .gradle/
 build/
+
+# Working copies of Claude Code agents
+.claude/worktrees/
