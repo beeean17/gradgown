@@ -1,6 +1,6 @@
 # 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다
 
-- 상태: 확정 (2026-11-14). 아래 권한 표는 초안이고 MySQL에서 실행해 확인하지 않았다
+- 상태: 확정 (2026-11-14). 권한을 주는 방식은 2026-11-16에 확정했다. 아래 권한 표는 초안이다. `GRANT` 문을 [`db/init/03-accounts.sql`](../../db/init/03-accounts.sql)에 썼고, MySQL 8.4.13에서 표대로 동작하는 것을 테스트로 확인했다(2026-11-16)
 - 관련: [admin-server-split.md](./admin-server-split.md), [data-model.md](./data-model.md), [test-login.md](./test-login.md), [evaluation.md](./evaluation.md)
 
 ## 결정
@@ -39,6 +39,21 @@ MySQL 권한은 DB 계정 단위다. 테이블과 컬럼 단위로는 제한할 
 - 관리자 계정은 전부 읽기만 한다. 원본의 등록 관리자가 "조회와 명단 내보내기"만 할 수 있는 것과 같다.
 - 영구 삭제는 마스터만 한다. 원본도 그렇다(`reservation.delete`, `mentoring.delete`).
 
+## 권한을 주는 방식 (확정, 2026-11-16)
+
+- **계정에 `GRANT`를 직접 준다. MySQL role은 쓰지 않는다.** 등급과 계정이 일대일이라 role이 줄여 줄 중복이 없고, 권한 표와 `GRANT` 문이 그대로 대응한다.
+- **테이블은 서버가 쓰는 계정이 만들지 않는다.** 컨테이너가 처음 뜰 때 초기화 스크립트가 root로 테이블, 뷰, 계정을 만든다([mysql-docker.md](./mysql-docker.md)). 세 계정에는 구조를 바꾸는 권한이 없다.
+
+| 등급 | DB 계정 | `GRANT`의 범위 |
+|---|---|---|
+| 학생 | `gradgown_student` | 테이블마다 따로 준다. `users`의 `UPDATE`만 컬럼 단위(`last_login_at`)다 |
+| 관리자 | `gradgown_admin` | `gradgown.*`에 `SELECT` |
+| 마스터 | `gradgown_master` | `gradgown.*`에 `SELECT`, `INSERT`, `UPDATE`, `DELETE` |
+
+공지 뷰 `visible_announcements`는 `SQL SECURITY DEFINER`다([`db/init/02-views.sql`](../../db/init/02-views.sql)). 뷰를 만든 계정(root)의 권한으로 `announcements`를 읽으므로, 학생 계정은 원본 테이블 권한 없이 뷰만 읽는다. 뷰는 `is_visible` 컬럼을 내보내지 않는다.
+
+계정의 비밀번호는 SQL 파일에 적혀 있다. 로컬 개발과 테스트에만 쓰는 값이다([ci.md](./ci.md)).
+
 ## Firestore Security Rules와의 대응
 
 | 원본 (Rules, Functions) | 이 프로젝트 |
@@ -64,13 +79,17 @@ MySQL 권한은 DB 계정 단위다. 테이블과 컬럼 단위로는 제한할 
 
 ## 미정
 
-- 계정 대신 MySQL role을 만들어 계정에 붙일지.
-- 테이블을 만드는 계정을 서버가 쓰는 계정과 따로 둘지. 제안은 따로 두는 것이다.
 - 학생 계정의 `UPDATE`를 컬럼 단위로 더 좁힐지. 예를 들어 `user_id`, `period_id`, `created_at`은 고칠 수 없게 할 수 있다.
 - 관리자용 서버가 조회 계정과 마스터 계정을 골라 쓰는 방식([admin-server-split.md](./admin-server-split.md)).
 
-## 확인할 것
+## 실행해서 확인한 것 (2026-11-16)
 
-- 뷰에만 `SELECT`를 주고 원본 테이블 권한이 없을 때 조회가 되는지.
-- 컬럼 단위 `UPDATE` 권한이 의도대로 동작하는지.
-- 권한이 없는 작업을 시도했을 때의 오류를 서버가 어떻게 받는지.
+[`PrivilegeTest`](../../db/src/test/java/gradgown/db/PrivilegeTest.java) 109개가 MySQL 8.4.13 컨테이너에서 모두 통과했다([동적 계열](../testing/dynamic.md) 2층). 계정별로 접속해서 권한 표의 칸을 하나씩 본다.
+
+| 확인한 것 | 결과 |
+|---|---|
+| 뷰에만 `SELECT`가 있고 원본 테이블 권한이 없을 때 | 뷰는 읽힌다. `announcements`를 직접 읽으면 오류 1142로 거부된다. 숨김 공지는 뷰에 나오지 않는다 |
+| 컬럼 단위 `UPDATE` | 학생 계정은 `users.last_login_at`만 고칠 수 있다. `role`이나 `email`을 고치면 오류 1143으로 거부된다 |
+| 권한이 없는 작업의 오류 | 테이블 권한이 없으면 오류 번호 1142, 컬럼 권한이 없으면 1143이다. JDBC에서는 `SQLException.getErrorCode()`로 받는다. 서버가 이것을 `permission-denied`로 바꿀 수 있다([API 계약](../contracts/web-api.md)) |
+| 권한 검사의 시점 | MySQL은 문장을 실행하기 전에 권한을 검사한다. 어떤 행도 바꾸지 않는 문장(`WHERE 1 = 0`)도 거부된다 |
+| 구조 변경 | 세 계정 모두 `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE`, `CREATE VIEW`, `DROP VIEW`가 오류 1142로 거부된다 |

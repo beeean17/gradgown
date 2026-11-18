@@ -9,7 +9,20 @@
 | [requirements/](./requirements/) | [과제 요구사항](./requirements/course-requirements.md)과 [보고서 요구사항·충족 현황](./requirements/report-requirements.md) |
 | [decisions/](./decisions/) | 결정 기록. 결정 하나에 문서 하나 |
 | [contracts/](./contracts/) | 웹과 서버 사이의 계약. [web-api.md](./contracts/web-api.md)는 초안이다 |
-| [testing/](./testing/) | 테스트 계획. [개요](./testing/README.md), [정적 계열](./testing/static.md), [동적 계열](./testing/dynamic.md). 모두 제안이다 |
+| [testing/](./testing/) | 테스트 계획. [개요](./testing/README.md), [정적 계열](./testing/static.md), [동적 계열](./testing/dynamic.md). 스키마·권한 테스트의 도구만 확정이고 나머지는 제안이다 |
+
+## 구현 현황 (2026-11-16)
+
+`feat/schema` 브랜치에서 스키마부터 만들었다. 서버와 웹은 아직 없다.
+
+| 무엇 | 어디 | 상태 |
+|---|---|---|
+| 테이블 11개, 공지 뷰, 계정 셋과 `GRANT`, 시드 데이터 | `db/init/*.sql` | MySQL 8.4.13에서 적용됨 |
+| 개발용 MySQL | `compose.yaml`, `db/conf/gradgown.cnf` | 띄워서 확인함. `docker compose up -d --wait` |
+| 스키마·권한 테스트 (동적 계열 1·2층) | `db/src/test/` | 로컬에서 152개 통과. `./gradlew :db:test` |
+| CI | — | 워크플로 없음 |
+
+스키마가 동작하는 것은 확인했지만, 설계의 세부는 아직 초안이다([data-model.md](./decisions/data-model.md)의 "DDL에서 정한 것").
 
 과제 안내 슬라이드 PDF는 저장소에 넣지 않는다. 로컬의 `docs/course-materials/`에 두고 `.gitignore`로 제외한다. 내용은 [과제 요구사항](./requirements/course-requirements.md)에 쪽 단위로 대조해 두었다.
 
@@ -25,27 +38,32 @@
 | MySQL과 Spring Boot로 만든다 | DB 확정, 나머지 잠정 | [tech-stack.md](./decisions/tech-stack.md) |
 | localhost에서만 실행한다 | 확정 | [local-only.md](./decisions/local-only.md) |
 | MySQL은 Docker 컨테이너로 띄운다 | 확정 (구성은 제안) | [mysql-docker.md](./decisions/mysql-docker.md) |
+| MySQL 이미지는 `mysql:8.4`다 | 확정 | [mysql-docker.md](./decisions/mysql-docker.md) |
+| 스키마는 초기화 SQL 파일로만 관리한다 | 확정 | [mysql-docker.md](./decisions/mysql-docker.md) |
+| 스키마·권한 테스트는 JUnit과 Testcontainers로 쓴다 | 확정 | [testing/dynamic.md](./testing/dynamic.md) |
+| DB 계정에 `GRANT`를 직접 준다. role은 쓰지 않고, 테이블은 초기화 때 root가 만든다 | 확정 | [db-privileges.md](./decisions/db-privileges.md) |
 | Google 로그인 대신 테스트 계정으로 로그인한다 | 확정 | [test-login.md](./decisions/test-login.md) |
 | 학생용과 관리자용 서버를 나눈다 | 확정 | [admin-server-split.md](./decisions/admin-server-split.md) |
 | 역할 간 경계는 DB 권한으로, 사용자 간 경계는 서버 코드로 지킨다 | 확정 (권한 표는 초안) | [db-privileges.md](./decisions/db-privileges.md) |
 | CI는 GitHub Actions로 돌린다 | 확정 (작업 구성은 제안) | [ci.md](./decisions/ci.md) |
-| Firestore 구조를 테이블 11개로 옮긴다 | 초안 | [data-model.md](./decisions/data-model.md) |
+| Firestore 구조를 테이블 11개로 옮긴다 | 초안 (DDL 작성, 제약 동작 확인) | [data-model.md](./decisions/data-model.md) |
 | 평가는 DB 수준 비교를 중심으로 한다 | 제안 | [evaluation.md](./decisions/evaluation.md) |
 
 ## 아직 정하지 않은 것
 
 | 항목 | 어디에 영향을 주나 |
 |---|---|
-| MySQL 이미지의 버전, 스키마 변경을 관리하는 방법 | [mysql-docker.md](./decisions/mysql-docker.md) |
+| DDL의 세부 (ID와 시각의 타입, 현재 회차 표시, 대리 수령 `CHECK`의 범위, 신청의 이메일 컬럼) | [data-model.md](./decisions/data-model.md) |
+| 개발용 DB의 데이터를 남길지, 이미지 태그를 패치 버전까지 고정할지 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 보고서의 분량 기준·언어, 개요, ER 다이어그램, 참고 문헌 | [requirements/report-requirements.md](./requirements/report-requirements.md) |
-| Spring에서 DB에 접근하는 방식 (JPA, JDBC 등) | [tech-stack.md](./decisions/tech-stack.md) |
+| Spring에서 DB에 접근하는 방식 (JPA, JDBC 등), Spring Boot 버전, 모듈 구성 | [tech-stack.md](./decisions/tech-stack.md) |
 | 관리자 기능을 어디까지 넣을지 (설정 저장, 공지·FAQ 작성, 명단 내보내기) | [scope.md](./decisions/scope.md) |
 | 테스터 권한을 넣을지 | [scope.md](./decisions/scope.md), [data-model.md](./decisions/data-model.md) |
 | 테스트 로그인의 구체적인 방식 | [test-login.md](./decisions/test-login.md) |
 | API 응답 모양, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
 | 관리자용 서버가 조회 계정과 마스터 계정을 골라 쓰는 방식, 두 서버의 공용 코드, 포트 | [admin-server-split.md](./decisions/admin-server-split.md) |
-| MySQL role을 쓸지, 테이블을 만드는 계정을 따로 둘지 | [db-privileges.md](./decisions/db-privileges.md) |
-| 정적 검사 도구, 테스트용 DB를 띄우고 되돌리는 방법, 브라우저 테스트 자동화 | [testing/README.md](./testing/README.md) |
+| 학생 계정의 `UPDATE`를 컬럼 단위로 더 좁힐지 | [db-privileges.md](./decisions/db-privileges.md) |
+| 정적 검사 도구, 서버를 띄우는 테스트에서 DB를 되돌리는 방법, 브라우저 테스트 자동화 | [testing/README.md](./testing/README.md) |
 | CI를 언제 돌릴지, 실패한 채 병합되는 것을 막을지 | [ci.md](./decisions/ci.md) |
 | 과제 쪽 미확인 사항 (제출 기한, 배점, 개인/팀, 제출 형식, 보고서 언어) | [requirements/course-requirements.md](./requirements/course-requirements.md) |
 

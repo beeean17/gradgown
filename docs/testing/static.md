@@ -13,6 +13,8 @@
 | 형식 | 들여쓰기, import 순서 같은 형식 차이 | Spotless |
 | 구조 규칙 | 아래 "구조 규칙" | ArchUnit |
 
+컴파일 검사는 `db` 모듈의 빌드에 들어 있다(`db/build.gradle.kts`, 2026-11-16). 형식과 구조 규칙은 아직 넣지 않았다. 지금 돌릴 수 있는 정적 검사는 `./gradlew :db:compileTestJava`뿐이다.
+
 정적 분석 도구(SpotBugs, Error Prone 등)는 더 넣지 않는다. 과제 규모에서는 컴파일러 경고와 구조 규칙으로 충분하다고 본다.
 
 ### 구조 규칙
