@@ -58,7 +58,12 @@ function start(entry: Entry) {
     next: (data) => publish(entry, { status: 'ready', data, error: null }),
     // The source keeps reading after a failure (see `fetchSource`), so its
     // stop function stays: `restartLive` and the idle timer still need it.
-    fail: (error) => publish(entry, { status: 'error', data: undefined, error }),
+    fail: (error) => {
+      // `refreshLive` starts the source afresh, so its first read can fail
+      // while a value is on screen. That is a failed refresh: keep the value.
+      if (entry.state.status === 'ready') return
+      publish(entry, { status: 'error', data: undefined, error })
+    },
   })
 }
 
