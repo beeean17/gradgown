@@ -56,12 +56,9 @@ function publish(entry: Entry, state: Live<unknown>) {
 function start(entry: Entry) {
   entry.stop = entry.source({
     next: (data) => publish(entry, { status: 'ready', data, error: null }),
-    fail: (error) => {
-      // A source stops itself when it fails; forget it so the next reader
-      // (or `restartLive`) starts a fresh one.
-      entry.stop = null
-      publish(entry, { status: 'error', data: undefined, error })
-    },
+    // The source keeps reading after a failure (see `fetchSource`), so its
+    // stop function stays: `restartLive` and the idle timer still need it.
+    fail: (error) => publish(entry, { status: 'error', data: undefined, error }),
   })
 }
 

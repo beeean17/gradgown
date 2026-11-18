@@ -15,12 +15,15 @@ const REFRESH_MS = 30_000
  * (`shared/types`), so there is no mapping step.
  *
  * A refresh that fails keeps the last value on screen; only a failed first
- * read is reported as an error.
+ * read is reported as an error. The source keeps reading after that, so a
+ * screen that opened while the server was down recovers by itself, as a
+ * Firestore listener did when the connection came back.
  */
 export function fetchSource<T>(path: string): LiveSource<T> {
   return ({ next, fail }) => {
     let stopped = false
     let hasValue = false
+    let hasFailed = false
 
     const stop = () => {
       stopped = true
@@ -35,8 +38,8 @@ export function fetchSource<T>(path: string): LiveSource<T> {
           next(data)
         },
         (error) => {
-          if (stopped || hasValue) return
-          stop()
+          if (stopped || hasValue || hasFailed) return
+          hasFailed = true
           fail(error instanceof Error ? error : new Error(String(error)))
         },
       )
