@@ -1,11 +1,19 @@
-export type ReservationKey = { userId: string; reservationId: string }
+// What the admin server (admin-server, docs/contracts/web-api.md "관리자 API") answers,
+// and the one interface the screens read it through. Times are Seoul-offset ISO strings.
+
+/** GET /api/auth/accounts: the seeded accounts the test login offers. */
+export type TestAccount = { email: string; role: ConsoleRole }
+
+/** One row of GET /api/admin/gown/reservations. */
 export type GownReservation = {
-  key: ReservationKey
+  reservationId: string
+  userId: string
+  /** The sign-in email of the user, joined from users. */
+  email: string
   periodId: string
-  status: 'reserved' | 'cancelled' | 'completed' | 'unknown'
+  status: 'reserved' | 'cancelled'
   name: string
   studentId: string
-  /** Collected by the student web since 2026-10; empty on older reservations. */
   department: string
   phone: string
   size: string
@@ -15,174 +23,132 @@ export type GownReservation = {
   isProxy: boolean
   proxyName: string
   proxyPhone: string
-  createdBy: string
   createdAt: string
   modifiedAt: string
   version: string
-  warnings: string[]
 }
-export type ReservationInput = Pick<GownReservation, 'name' | 'studentId' | 'department' | 'phone' | 'size' | 'slotId' | 'rentAt' | 'returnAt' | 'isProxy' | 'proxyName' | 'proxyPhone'>
-export type Period = { startsAt: string; endsAt: string }
-export type Slot = Period & { id: string; enabled: boolean }
-export type ReservationSettings = {
-  version: string
+/** The server applies `search` (이름·학번·연락처) and `status` before it cuts the page. */
+export type ReservationQuery = { periodId: string; search: string; status: 'all' | GownReservation['status']; cursor: string | null }
+/** `nextCursor` goes back as `cursor` for the next page; null on the last one. */
+export type ReservationPage = { items: GownReservation[]; nextCursor: string | null }
+/** GET /api/admin/gown/periods/current. */
+export type GownPeriod = {
   periodId: string
+  title: string
   isOpen: boolean
-  createPeriod: Period
-  editPeriod: Period
-  slotsByDate: Record<string, { date: string; slots: Slot[] }>
+  isCurrent: boolean
+  applyStartAt: string
+  applyEndAt: string
+  editStartAt: string
+  editEndAt: string
+  slotCount: number
+  reservedCount: number
 }
-export type TestingSettings = { version: string; enabled: boolean; allowedUserIds: Record<string, boolean>; expiresAt: string }
-/** Which private tester list: settings_private/{kind}_testing. */
-export type TestingKind = 'reservation' | 'mentoring'
+/** GET /api/admin/gown/slots: one line of a period's timetable. */
+export type GownSlot = { slotId: string; periodId: string; startsAt: string; endsAt: string; enabled: boolean }
+
 /**
  * St:talk offers a fixed set shared by both sessions: options 1–7, named in
  * `options[n - 1]`, and 0 = 선택 안함 (never stored in `options`).
  */
 export const MENTORING_OPTION_COUNT = 7
-/**
- * settings/mentoring (docs/contracts/mentoring-command.md). `schemaVersion` 1 is
- * the v1 (Flutter) shape: it reads as closed to students until saved again here.
- */
-export type MentoringSettings = {
-  version: string
-  schemaVersion: 1 | 2
+/** GET /api/admin/mentoring/events/current. `options` always has MENTORING_OPTION_COUNT names; '' is an unnamed one. */
+export type MentoringEvent = {
   eventId: string
   isOpen: boolean
-  applicationPeriod: Period
-  event: { date: string; location: string; sessions: [Period, Period] }
-  /** Exactly MENTORING_OPTION_COUNT names; '' is allowed only while closed. */
+  isCurrent: boolean
+  applyStartAt: string
+  applyEndAt: string
+  date: string
+  location: string
+  sessions: { id: string; label: string; startsAt: string; endsAt: string }[]
   options: string[]
   intro: string
   notes: string[]
   epicFolioUrl: string
   isEpicFolioLinkOpen: boolean
-  warnings: string[]
+  reservedCount: number
 }
-/** `adminCommand` `mentoring.settings.save` input. The server names the sessions (1차시·2차시). */
-export type MentoringSettingsInput = Omit<MentoringSettings, 'version' | 'schemaVersion' | 'warnings'>
-export type MentoringKey = { userId: string; registrationId: string }
-/** users/{userId}/mentoring_registrations/{registrationId}. Options are 0 (선택 안함) or 1–7; null when the stored value is not one. */
+/** One row of GET /api/admin/mentoring/registrations. Options are 0 (선택 안함) or 1–7. */
 export type MentoringRegistration = {
-  key: MentoringKey
-  eventId: string
-  status: 'reserved' | 'cancelled' | 'unknown'
-  name: string
-  department: string
-  studentId: string
-  grade: number | null
-  phone: string
-  /** Verified sign-in email the server recorded; '' when it had none. */
+  registrationId: string
+  userId: string
+  /** The sign-in email of the user, joined from users. */
   email: string
-  firstOption: number | null
-  secondOption: number | null
-  createdBy: string
+  eventId: string
+  status: 'reserved' | 'cancelled'
+  firstOption: number
+  secondOption: number
+  name: string
+  studentId: string
+  department: string
+  phone: string
+  grade: number
   createdAt: string
   modifiedAt: string
   version: string
-  warnings: string[]
 }
-/** `adminCommand` `mentoring.create` / `mentoring.update` input (docs/contracts/mentoring-command.md). */
-export type MentoringInput = { name: string; department: string; studentId: string; grade: number; phone: string; firstOption: number; secondOption: number }
-/** `failed-precondition` details when a save renames an option live registrations chose (MNT-52). */
-export type MentoringOptionChange = { option: number; before: string; after: string; first: number; second: number }
+/** Search (이름·학번·전화) and the three filters of MNT-55, all applied by the server. */
+export type MentoringQuery = { eventId: string; search: string; status: 'all' | MentoringRegistration['status']; first: 'all' | number; second: 'all' | number }
+/** One row of GET /api/admin/mentoring/counts: reserved registrations per option and session (MNT-54). Option 0 is 선택 안함. */
+export type MentoringCount = { option: number; name: string; first: number; second: number }
+
 export type ContentKind = 'announcements' | 'faq'
+/** An announcement or a FAQ. A FAQ's question and answer read as `title` and `content`. */
 export type ContentEntry = {
   id: string; title: string; content: string; category: string; isVisible: boolean
-  isPinned: boolean; isPopup: boolean; popupOrder: number | null; showOnToggle: boolean
+  isPinned: boolean; isPopup: boolean; showOnHome: boolean
   tags: string[]; order: number
 }
-export type ContentBundle = { version: string; entries: ContentEntry[] }
-export type UserLookup = {
-  uid: string
-  authExists: boolean
-  profileExists: boolean
-  email: string
-  emailVerified: boolean
-  disabled: boolean
-  role: string
-  createdAt: string
-  lastLogin: string
-  reservations: { reservationId: string; periodId: string; status: string; createdAt: string; modifiedAt: string }[]
-}
-export type AuditOutcome = 'received' | 'succeeded' | 'rejected' | 'failed' | 'unknown'
+
+export type AuditOutcome = 'received' | 'succeeded' | 'rejected' | 'failed'
+export type AuditDomain = 'reservation' | 'mentoring'
+/** One row of GET /api/admin/audit-logs: a student command. `completedAt` is '' while the result is not recorded. */
 export type AuditRow = {
-  id: string
   operationId: string
-  schemaVersion: number
   domain: string
   action: string
-  origin: string
-  actorType: string
-  actorUid: string
-  target: string
-  targetUserId: string
-  reservationId: string
-  /** St:talk operations name the registration and event instead of a reservation and round. */
-  registrationId: string
-  eventId: string
-  periodId: string
-  stage: string
+  actorId: string
+  actorEmail: string
+  targetId: string | null
   outcome: AuditOutcome
-  failureSource: string
-  failureKind: string
-  errorCode: string
-  message: string
-  retryable: boolean | null
-  resultKnown: boolean
-  severity: string
+  failureKind: string | null
+  errorCode: string | null
   createdAt: string
-  updatedAt: string
-  durationMs: number | null
-  resolvedAt: string
+  completedAt: string
 }
-export type FunctionLogRow = {
-  id: string
-  timestamp: string
-  severity: string
-  functionName: string
-  executionId: string
-  operationId: string
-  actorUid: string
-  targetUserId: string
-  reservationId: string
-  action: string
-  outcome: AuditOutcome
-  failureSource: string
-  errorCode: string
-  stage: string
-  message: string
-  httpStatus: number | null
-}
-export type FunctionLogFilter = { hours: 1 | 6 | 24; severity: 'all' | 'warning' | 'error'; search: string }
-export type FunctionLogPage = { rows: FunctionLogRow[]; unavailableReason: string }
+export type AuditQuery = { domain: 'all' | AuditDomain; outcome: 'all' | AuditOutcome; cursor: string | null }
+export type AuditPage = { items: AuditRow[]; nextCursor: string | null }
+
 export type LoadState<T> = { status: 'loading' } | { status: 'ready'; data: T } | { status: 'error'; message: string }
 export type ConsoleRole = 'master' | 'admin'
-export type ConsolePermission = 'console.view' | 'reservation.write' | 'reservation.delete' | 'mentoring.write' | 'mentoring.delete' | 'settings.write' | 'content.write' | 'mail.send' | 'members.manage'
-/** What getAdminContext granted (functions/admin-policy.js). The UI hides what the server would refuse anyway. */
+export type ConsolePermission = 'console.view' | 'applications.open'
+/**
+ * What a role may do. The role comes from GET /api/me; the permissions follow from it here.
+ * The UI hides what the database would refuse anyway (docs/decisions/admin-server-split.md).
+ */
 export type ConsoleAccess = { role: ConsoleRole; permissions: ConsolePermission[] }
-export type ConsoleMember = { kind: 'uid' | 'email'; key: string; label: string; addedAt: string; addedBy: string }
-export type ConsoleMembers = { version: string; entries: ConsoleMember[] }
 export type ConsoleAccount = { uid: string; email: string }
 export type AdminSessionState =
-  | { status: 'checking-auth' | 'signed-out' | 'checking-permission' }
-  /** `account` lets an unregistered person hand their email/UID to the master. */
-  | { status: 'forbidden'; account?: ConsoleAccount }
+  | { status: 'checking-auth' }
+  | { status: 'signed-out'; accounts: TestAccount[] }
   | { status: 'authorized'; uid: string; email: string; access: ConsoleAccess }
   | { status: 'error'; message: string }
-export type ReservationPage = { rows: GownReservation[]; hasNext: boolean; cursor: unknown }
 export type AdminApi = {
-  getSettings(): Promise<ReservationSettings | null>
-  getTesting(kind?: TestingKind): Promise<TestingSettings | null>
-  getMentoringSettings(): Promise<MentoringSettings | null>
-  /** Every registration of one event, newest first. An event holds a few hundred at most. */
-  listMentoring(eventId: string): Promise<MentoringRegistration[]>
-  listReservations(periodId: string, cursor?: unknown): Promise<ReservationPage>
-  getUser(uid: string): Promise<UserLookup | null>
-  getContent(kind: ContentKind): Promise<ContentBundle>
-  listAudit(): Promise<AuditRow[]>
-  listFunctionLogs(filter: FunctionLogFilter): Promise<FunctionLogPage>
-  getMembers(): Promise<ConsoleMembers>
-  command(input: Record<string, unknown>): Promise<void>
-  uploadImage(file: File, progress: (percent: number) => void): Promise<string>
+  /** The current gown period, or null when none is marked current. */
+  getPeriod(): Promise<GownPeriod | null>
+  listSlots(periodId: string): Promise<GownSlot[]>
+  listReservations(query: ReservationQuery): Promise<ReservationPage>
+  /** Master only: for an admin MySQL refuses the write and the server answers `permission-denied`. */
+  setPeriodOpen(periodId: string, isOpen: boolean): Promise<void>
+  /** The current St:talk event, or null when none is marked current. */
+  getEvent(): Promise<MentoringEvent | null>
+  /** Every registration of one event that matches, newest first. An event holds a few hundred at most. */
+  listMentoring(query: MentoringQuery): Promise<MentoringRegistration[]>
+  /** Eight rows: options 1–7, then 0. */
+  getMentoringCounts(eventId: string): Promise<MentoringCount[]>
+  /** Master only, as setPeriodOpen. Opening needs all seven option names (MNT-51). */
+  setEventOpen(eventId: string, isOpen: boolean): Promise<void>
+  getContent(kind: ContentKind): Promise<ContentEntry[]>
+  listAudit(query: AuditQuery): Promise<AuditPage>
 }
