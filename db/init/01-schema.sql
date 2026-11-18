@@ -151,24 +151,24 @@ CREATE TABLE mentoring_options (
 ) ENGINE = InnoDB;
 
 CREATE TABLE mentoring_registrations (
-  id               BIGINT       NOT NULL AUTO_INCREMENT,
-  user_id          BIGINT       NOT NULL,
-  event_id         CHAR(7)      NOT NULL,
+  id               BIGINT      NOT NULL AUTO_INCREMENT,
+  user_id          BIGINT      NOT NULL,
+  event_id         CHAR(7)     NOT NULL,
   -- NULL means "no choice" for that session (0 in the original and in the API).
-  first_option_no  TINYINT      NULL DEFAULT NULL,
-  second_option_no TINYINT      NULL DEFAULT NULL,
+  first_option_no  TINYINT     NULL DEFAULT NULL,
+  second_option_no TINYINT     NULL DEFAULT NULL,
   status           ENUM('reserved', 'cancelled') NOT NULL DEFAULT 'reserved',
-  name             VARCHAR(60)  NOT NULL,
-  department       VARCHAR(60)  NOT NULL,
-  student_id       VARCHAR(30)  NOT NULL,
-  grade            TINYINT      NOT NULL,
-  phone            VARCHAR(30)  NOT NULL,
-  email            VARCHAR(254) NULL DEFAULT NULL,
-  created_by       BIGINT       NOT NULL,
+  name             VARCHAR(60) NOT NULL,
+  department       VARCHAR(60) NOT NULL,
+  student_id       VARCHAR(30) NOT NULL,
+  grade            TINYINT     NOT NULL,
+  phone            VARCHAR(30) NOT NULL,
+  -- The applicant's e-mail is users.email. It is not copied here.
+  created_by       BIGINT      NOT NULL,
   -- Optimistic lock (MNT-23). The server adds 1 on every change.
-  version          INT          NOT NULL DEFAULT 1,
-  created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  version          INT         NOT NULL DEFAULT 1,
+  created_at       TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at       TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   reserved_marker  TINYINT GENERATED ALWAYS AS (IF(status = 'reserved', 1, NULL)) VIRTUAL,
   PRIMARY KEY (id),
   -- MNT-22: one reserved registration per user and event.

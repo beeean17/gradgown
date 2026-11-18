@@ -129,27 +129,27 @@ INSERT INTO mentoring_options (event_id, option_no, name) VALUES
 
 INSERT INTO mentoring_registrations
   (id, user_id, event_id, first_option_no, second_option_no, status,
-   name, department, student_id, grade, phone, email, created_by, version)
+   name, department, student_id, grade, phone, created_by, version)
 VALUES
   -- A registration from the past event.
   (1, 1, '2026-05', 2, 4, 'reserved',
-   '홍길동', '화학공학과', '99990001', 4, '010-0000-0001', 'student01@example.com', 1, 1),
+   '홍길동', '화학공학과', '99990001', 4, '010-0000-0001', 1, 1),
   -- Current event.
   (2, 1, '2027-01', 1, 3, 'reserved',
-   '홍길동', '화학공학과', '99990001', 4, '010-0000-0001', 'student01@example.com', 1, 1),
+   '홍길동', '화학공학과', '99990001', 4, '010-0000-0001', 1, 1),
   -- Second session only.
   (3, 2, '2027-01', NULL, 2, 'reserved',
-   '성춘향', '전자공학과', '99990002', 3, '010-0000-0002', 'student02@example.com', 2, 1),
+   '성춘향', '전자공학과', '99990002', 3, '010-0000-0002', 2, 1),
   -- Student 3 cancelled once and applied again.
   (4, 3, '2027-01', 2, 5, 'cancelled',
-   '이몽룡', '기계공학과', '99990003', 2, '010-0000-0003', 'student03@example.com', 3, 2),
+   '이몽룡', '기계공학과', '99990003', 2, '010-0000-0003', 3, 2),
   (5, 3, '2027-01', 5, 2, 'reserved',
-   '이몽룡', '기계공학과', '99990003', 2, '010-0000-0003', 'student03@example.com', 3, 1),
+   '이몽룡', '기계공학과', '99990003', 2, '010-0000-0003', 3, 1),
   -- First session only.
   (6, 4, '2027-01', 1, NULL, 'reserved',
-   '심청', '건축학부', '99990004', 1, '010-0000-0004', 'student04@example.com', 4, 1),
+   '심청', '건축학부', '99990004', 1, '010-0000-0004', 4, 1),
   (7, 5, '2027-01', 3, 1, 'reserved',
-   '임꺽정', '컴퓨터공학과', '99990005', 4, '010-0000-0005', 'student05@example.com', 5, 1);
+   '임꺽정', '컴퓨터공학과', '99990005', 4, '010-0000-0005', 5, 1);
 
 -- ---------------------------------------------------------------------------
 -- Content
