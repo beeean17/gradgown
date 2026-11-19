@@ -251,5 +251,9 @@ CREATE TABLE audit_logs (
   created_at   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   completed_at TIMESTAMP(3) NULL DEFAULT NULL,
   PRIMARY KEY (operation_id),
+  -- The admin list reads the log newest first, a page at a time. Without this
+  -- index every page sorts the whole table; with it a page reads a few hundred
+  -- rows whatever the table holds (eval/results: 500,054 rows read against 303).
+  KEY ix_audit_logs_created (created_at, operation_id),
   CONSTRAINT fk_audit_logs_actor FOREIGN KEY (actor_id) REFERENCES users (id)
 ) ENGINE = InnoDB;
