@@ -282,7 +282,7 @@ Firebase 버전은 이것을 함수 안의 트랜잭션 조회로 막았다. 이
 
 ## 측정은 테스트가 아니다
 
-[evaluation.md](../decisions/evaluation.md)의 조회 구조 비교(읽는 행 수, 왕복 횟수, 실행 계획)는 통과와 실패가 없다. 테스트와 따로 스크립트로 두고, 결과를 보고서에 싣는다. 합성 데이터의 규모가 정해져야 한다.
+[evaluation.md](../decisions/evaluation.md)의 조회 구조 비교(읽는 행 수, 왕복 횟수, 실행 계획)는 통과와 실패가 없다. 테스트와 따로 `eval` 모듈로 두었고(`./gradlew :eval:measure`), 결과는 `eval/results/`에 있다([evaluation.md](../decisions/evaluation.md)).
 
 ## 실행
 

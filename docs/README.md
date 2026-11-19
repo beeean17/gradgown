@@ -24,7 +24,8 @@ DB, 서버 둘, 웹 둘을 만들었다. 실행 방법은 저장소 루트의 [R
 | 관리자용 서버: 로그인, 명단 검색, 집계, 접수 열기·닫기 | `admin-server/` | 통합 테스트 통과 |
 | 학생 웹 | `web/` | 원본을 가져와 데이터 계층을 학생용 서버로 바꿈. 타입·린트·빌드 통과. 브라우저에서 흐름 확인 |
 | 관리자 앱 | `admin-web/` | 원본을 가져와 관리자용 서버로 바꾸고 범위 밖 화면을 없앰. 타입·린트·빌드 통과. 브라우저에서 조회 흐름 확인 |
-| CI | `.github/workflows/` | 워크플로를 썼지만 GitHub에서 돌려 보지 않았다 |
+| 평가용 측정 | `eval/` | MySQL과 Firestore 에뮬레이터에 같은 데이터를 넣고 측정함. 결과는 `eval/results/` |
+| CI | `.github/workflows/` | GitHub에서 통과함(2026-11-19). 컴파일, 웹 검사 둘, MySQL 테스트 |
 
 테스트는 로컬에서 `./gradlew test`로 돈다(257개). 층별 개수와 방법, 테스트를 쓰지 않은 쪽의 검증에서 나온 결함과 알고도 고치지 않은 것은 [testing/dynamic.md](./testing/dynamic.md)에 있다.
 
@@ -58,6 +59,7 @@ DB, 서버 둘, 웹 둘을 만들었다. 실행 방법은 저장소 루트의 [R
 | Firestore 구조를 테이블 11개로 옮긴다 | 잠정 (DDL의 세부는 확정) | [data-model.md](./decisions/data-model.md) |
 | 시드 데이터의 날짜는 고정한다 | 확정 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 평가는 DB 수준 비교를 중심으로 한다 | 제안 | [evaluation.md](./decisions/evaluation.md) |
+| 조회 구조 넷과 프론트 번들을 측정한다. 실제 규모와 100배 규모에서, Firebase 쪽은 로컬 에뮬레이터로 잰다 | 확정 | [evaluation.md](./decisions/evaluation.md) |
 
 ## 아직 정하지 않은 것
 
