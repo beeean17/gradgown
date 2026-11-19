@@ -4,4 +4,5 @@ rootProject.name = "gradgown"
 // core            rules and response types shared by the two servers; no web, no database
 // student-server  the API for the student web; connects as gradgown_student
 // admin-server    the API for the admin app; connects as gradgown_admin or gradgown_master
-include("db", "core", "student-server", "admin-server")
+// eval            measurements for the report: MySQL against a local Firestore emulator
+include("db", "core", "student-server", "admin-server", "eval")

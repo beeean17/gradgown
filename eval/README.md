@@ -1,0 +1,82 @@
+# 평가용 측정
+
+보고서의 Evaluation에 쓸 수치를 얻는 도구다. 무엇을 왜 재는지는 [docs/decisions/evaluation.md](../docs/decisions/evaluation.md)에 있다. 테스트가 아니라서 통과와 실패가 없고 `./gradlew test`에 들어 있지 않다.
+
+## 무엇을 재나
+
+같은 합성 데이터를 두 저장소에 넣고, 같은 질문을 각자의 방식으로 묻는다.
+
+| 쪽 | 저장소 | 실행하는 것 |
+|---|---|---|
+| 원본 | **로컬 Firestore 에뮬레이터** | 원본 관리자 앱과 학생 웹의 쿼리(grad42 `admin-web/src/data/admin-api.ts` 등)와 같은 모양의 쿼리. 문서 구조는 원본의 `firebase/docs/data-model.md`를 따른다 |
+| 이 프로젝트 | MySQL 8.4 컨테이너 (테스트가 쓰는 것과 같다) | 두 서버의 저장소 클래스에 있는 SQL 그대로 |
+
+**운영 중인 Firebase에는 어떤 요청도 보내지 않는다.** 측정 프로그램은 에뮬레이터 주소가 `127.0.0.1`이나 `localhost`가 아니면 시작하지 않고, 프로젝트 ID는 에뮬레이터에만 있는 `demo-gradgown-eval`로 고정돼 있다.
+
+질문은 다섯 가지다.
+
+| 질문 | 원본이 하는 일 | 이 프로젝트가 하는 일 |
+|---|---|---|
+| 1. 예약 명단의 첫 페이지 | 컬렉션 그룹 쿼리로 51건 | `WHERE period_id = ? ORDER BY id DESC LIMIT 51` |
+| 2. 회차에서 한 사람 찾기 (A1) | 받은 페이지 안에서만 검색한다. 없으면 다음 페이지 | `WHERE`에 검색어를 넣어 회차 전체에서 찾는다 |
+| 3. St:talk 신청 인원 집계 | 행사의 신청을 최대 1,000건 읽어 브라우저에서 센다 | `GROUP BY` 한 번 |
+| 4. 감사 로그에서 거부된 요청 보기 (A5) | 최신 200건을 읽어 브라우저에서 거른다 | `WHERE outcome = ?`와 키 기반 페이지 나누기 |
+| 5. 학생에게 내려가는 공지 (A4) | 공지 전체가 든 문서 하나를 읽고 브라우저가 숨김 항목을 뺀다 | 노출 중인 공지만 보이는 뷰를 읽는다 |
+
+## 규모
+
+| 이름 | 회차의 예약 | 행사의 신청 | 감사 로그 | 공지 | 뜻 |
+|---|---|---|---|---|---|
+| `actual` | 1,000 | 300 | 5,000 | 30 | 이 서비스의 실제 규모에 가깝게 잡은 값 |
+| `x100` | 100,000 | 30,000 | 500,000 | 300 | 그 100배. 건수가 늘 때 어떻게 달라지는지 본다 |
+
+실제 규모는 추정이다. 원본 문서는 St:talk 행사가 "수백 건 규모"라고만 적고 있다.
+
+데이터는 모두 만들어 낸 값이고 고정된 씨앗으로 생성하므로, 다시 돌려도 같은 데이터가 나온다.
+
+## 표를 읽는 법
+
+| 열 | 뜻 |
+|---|---|
+| 요청 | 브라우저(또는 서버)가 저장소에 보낸 요청 수 |
+| 읽은 것 | Firestore는 쿼리가 돌려준 문서 수다. Firestore는 이 수로 과금한다. MySQL은 스토리지 엔진이 읽은 행 수(`Handler_read_%` 상태 값의 합)이고, 조인으로 따라간 행도 들어 있다 |
+| 돌려받은 것 | 요청한 쪽에 돌아온 문서나 행의 수 |
+| 응답 크기 | Firestore는 REST 응답 JSON에서 들여쓰기를 뺀 크기다. MySQL은 결과 행을 JSON으로 쓴 크기다. API 응답 본문과 같지는 않고 견줄 만한 어림값이다 |
+| 결과 | 원하는 답을 얻었는지. MySQL은 15번 실행한 시간의 중앙값을 함께 적는다 |
+
+조심해서 읽을 점:
+
+- **시간은 MySQL 쪽에만 있다.** 에뮬레이터의 속도는 실제 Firestore와 무관하다. MySQL의 시간도 개발 머신의 컨테이너에서 잰 참고값이다. 비교하는 것은 구조(요청 수, 읽는 건수, 내려오는 양, 답이 맞는지)다.
+- Firestore의 응답 크기는 모든 값에 타입이 붙는 Firestore의 형식(`{"stringValue": "…"}`) 그대로다. 브라우저 SDK가 실제로 주고받는 형식도 같은 구조지만 전송 방식이 달라서, 바이트 수는 어림값으로 봐야 한다.
+- 원본의 쿼리는 원본 코드를 읽고 같은 모양으로 다시 쓴 것이다. 원본 앱을 그대로 돌린 것이 아니다.
+
+## 실행
+
+Docker와 JDK 21, 그리고 Firestore 에뮬레이터가 필요하다.
+
+```sh
+# 1. 에뮬레이터를 띄운다 (Firebase CLI가 있을 때)
+firebase emulators:start --only firestore --project demo-gradgown-eval --config eval/firebase.json
+
+# 2. 다른 터미널에서 측정한다. 규모를 주지 않으면 둘 다 돈다
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8790 ./gradlew :eval:measure
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8790 ./gradlew :eval:measure --args="actual"
+```
+
+Firebase CLI가 이미 받아 둔 에뮬레이터 jar를 직접 띄워도 된다. 이 저장소의 결과는 이렇게 얻었다.
+
+```sh
+java -Xmx4g -jar ~/.cache/firebase/emulators/cloud-firestore-emulator-v1.22.0.jar --host=127.0.0.1 --port=8790
+```
+
+결과는 [`results/actual.md`](./results/actual.md)와 [`results/x100.md`](./results/x100.md)에 쓰인다. 실행 계획(`EXPLAIN ANALYZE`)도 그 파일에 들어 있다.
+
+## 번들 크기
+
+Firebase SDK를 뺀 전후의 빌드 결과를 비교한다. "가져온 그대로"는 커밋 `9b4a26a`를 빌드한 것이다.
+
+```sh
+node eval/bundle-size.mjs "지금=web/dist" "가져온 그대로=<9b4a26a를 빌드한 dist>"
+```
+
+결과는 [`results/bundle.md`](./results/bundle.md)에 있다.
