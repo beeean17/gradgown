@@ -21,23 +21,23 @@
 | 판정 | 항목 수 | 항목 |
 |---|---|---|
 | 준비됨 | 10 | RPT-21, 23, 31, 41, 44, 45, 47, 52, 53, 54 |
-| 일부 | 13 | RPT-3, 10, 20, 22, 24, 25, 30, 40, 43, 46, 50, 51, 70 |
+| 일부 | 15 | RPT-2, 3, 10, 20, 22, 24, 25, 26, 30, 40, 43, 46, 50, 51, 70 |
 | 구현 필요 | 0 | — |
-| 없음 | 4 | RPT-2, 26, 42, 60 |
+| 없음 | 2 | RPT-42, 60 |
 | 확인 필요 | 1 | RPT-1 |
 
 설계의 근거와 한계는 준비됐다. 빠진 것은 세 부류다.
 
 1. **보고서로 옮기는 일.** DB, 서버, 웹을 만들고 측정까지 했다(2026-11-19). 남은 것은 그 재료를 6쪽의 글과 표로 줄이는 일이다.
 2. **그림.** ER 다이어그램과 전체 구조 그림이 없다. ER 모델은 슬라이드가 보고서 구성 예시와 General Advice에서 거듭 요구하고, 예시 보고서 세 개가 모두 실은 항목이다.
-3. **글의 뼈대.** 보고서 개요, 참고 문헌, Contribution 문장이 없다.
+3. **글.** 개요와 Contribution은 [개요](../report/outline.md)에 초안이 있다(2026-11-19). 참고 문헌이 없고, 본문은 한 줄도 쓰지 않았다.
 
 ## 형식
 
 | ID | 요구 | 강도 | 근거 | 판정 | 현황 |
 |---|---|---|---|---|---|
-| RPT-1 | 분량은 6쪽이다 | 필수 | 1번 4쪽 | 확인 필요 | 6쪽이 상한인지, 부록이 포함되는지 모른다. 두 서비스를 다 구현하므로 분량이 빠듯하다. 기능 흐름은 한 서비스만 자세히 쓰기로 했다([scope.md](../decisions/scope.md)) |
-| RPT-2 | Abstract and Introduction, Background and Motivation, Design and Implementation, Evaluation, Conclusion으로 구성한다 | 필수 | 1번 4쪽 | 없음 | 보고서 개요를 쓰지 않았다. 보고서 언어도 정하지 않았다 |
+| RPT-1 | 분량은 6쪽이다 | 필수 | 1번 4쪽 | 확인 필요 | 본문 6쪽과 부록으로 계획한다(2026-11-19 확정, [개요](../report/outline.md)). 부록이 허용되지 않아도 본문이 혼자 읽히게 쓴다. 6쪽이 상한인지, 부록이 실제로 허용되는지, 양식이 있는지는 강의 공지를 확인해야 한다 |
+| RPT-2 | Abstract and Introduction, Background and Motivation, Design and Implementation, Evaluation, Conclusion으로 구성한다 | 필수 | 1번 4쪽 | 일부 | 다섯 섹션의 개요와 쪽 배분을 [개요](../report/outline.md)에 썼다(초안). 언어는 영어로 확정했다. 본문은 쓰지 않았다 |
 | RPT-3 | 프로젝트, DB 스키마, DB와 상호작용하는 코드를 설명한다 | 필수 | 1번 4쪽 | 일부 | 프로젝트 설명은 있다([topic.md](../decisions/topic.md), [scope.md](../decisions/scope.md)). 스키마는 DDL로 있고 세부를 확정했다. DB와 상호작용하는 코드는 두 서버의 저장소 클래스에 SQL로 있다(2026-11-18). 보고서의 글로 옮기지 않았다 |
 
 ## Abstract
@@ -57,8 +57,8 @@
 | RPT-22 | 기존 연구나 방식과 비교한다 | 필수 | 1번 5~6쪽 | 일부 | 기존 방식은 Firebase 버전이다. 인용할 문헌이 하나도 없다. 예시 3은 직접 다룬 연구가 없다고 밝히고 비슷한 시스템을 참고했다고 썼다 |
 | RPT-23 | 제안하는 내용 | 필수 | 1번 5~6쪽 | 준비됨 | 테이블 11개로의 정규화, 규칙의 제약화, 등급별 DB 계정, 서버 분리([data-model.md](../decisions/data-model.md), [db-privileges.md](../decisions/db-privileges.md), [admin-server-split.md](../decisions/admin-server-split.md)) |
 | RPT-24 | 평가를 요약한다 | 필수 | 1번 5~6쪽 | 일부 | 측정 결과와 그 해석이 [evaluation.md](../decisions/evaluation.md)에 있다(2026-11-19). 보고서의 문장으로 줄이지 않았다 |
-| RPT-25 | Contribution을 3개 이상 적는다: 분석, 설계와 구현, 평가 | 필수 | 1번 7쪽 | 일부 | 분석(기존 웹이 Firebase에 닿는 지점, 코드에 있던 규칙)과 설계는 재료가 있다([API 계약](../contracts/web-api.md), [data-model.md](../decisions/data-model.md)). 구현과 평가는 결과가 필요하다. 문장으로 정리하지 않았다 |
-| RPT-26 | 나머지 구성을 안내하는 문단 | 필수 | 1번 7쪽 | 없음 | 개요가 정해지면 쓴다 |
+| RPT-25 | Contribution을 3개 이상 적는다: 분석, 설계와 구현, 평가 | 필수 | 1번 7쪽 | 일부 | 분석(기존 웹이 Firebase에 닿는 지점, 코드에 있던 규칙)과 설계는 재료가 있다([API 계약](../contracts/web-api.md), [data-model.md](../decisions/data-model.md)). 구현과 평가는 결과가 필요하다. Contribution 넷의 초안을 [개요](../report/outline.md)에 썼다 |
+| RPT-26 | 나머지 구성을 안내하는 문단 | 필수 | 1번 7쪽 | 일부 | 구성은 [개요](../report/outline.md)에 있다. 문단으로 쓰지 않았다 |
 
 ## Background and Motivation
 
@@ -77,7 +77,7 @@
 | RPT-43 | DB 스키마: 테이블, 컬럼, 타입, PK와 FK | 필수 | 1번 4쪽, 4번 14쪽, 20쪽 | 일부 | DDL이 `db/init/01-schema.sql`에 있고 MySQL 8.4.13에서 제약이 동작하는 것을 테스트로 확인했다(2026-11-16). DDL의 세부는 2026-11-18에 확정했다([data-model.md](../decisions/data-model.md)). 보고서에 실을 표와 ER 다이어그램은 아직 없다 |
 | RPT-44 | DB에 어떻게 연결하는지 | 필수 | 1번 14쪽, 4번 8쪽 | 준비됨 | 두 서버가 Spring JDBC로 접속한다. 학생용 서버는 학생 계정 하나, 관리자용 서버는 조회 계정과 마스터 계정의 연결 풀 둘을 두고 로그인한 사람의 등급으로 고른다(`admin-server`의 `RoleRoutingDataSource`, [admin-server-split.md](../decisions/admin-server-split.md)). 접속 설정은 각 서버의 `application.properties`에 있다 |
 | RPT-45 | 구현을 실제 코드로 설명한다. DB와 상호작용하는 코드 | 필수 | 1번 10쪽, 4번 9쪽, 15~16쪽, 23쪽 | 준비됨 | SQL을 직접 쓴 저장소 클래스가 있다(`student-server`와 `admin-server`의 `repository` 패키지). 실을 만한 것: 유효 예약 하나를 UNIQUE 위반(1062)으로 받는 `INSERT`, `version`을 `WHERE`에 넣은 `UPDATE`, 슬롯을 두 번 조인하는 내 예약 조회, 검색과 키 기반 페이지 나누기, `GROUP BY` 한 번의 집계, `JSON_TABLE`. 어느 것을 실을지 고르지 않았다 |
-| RPT-46 | 읽은 사람이 재현할 수 있어야 한다 | 필수 | 1번 10쪽 | 일부 | 실행 방법이 저장소 루트의 `README.md`에 있다: `docker compose up`, 서버 둘의 `bootRun`, `./gradlew test`. 개발 머신에서는 확인했다. 다른 환경에서의 재현은 CI가 확인할 텐데, 워크플로를 GitHub에서 돌려 보지 않았다 |
+| RPT-46 | 읽은 사람이 재현할 수 있어야 한다 | 필수 | 1번 10쪽 | 일부 | 실행 방법이 저장소 루트의 `README.md`에 있다: `docker compose up`, 서버 둘의 `bootRun`, `./gradlew test`. 개발 머신에서는 확인했다. 다른 환경에서의 재현은 CI가 확인할 텐데, CI가 GitHub에서 통과했다(2026-11-19) |
 | RPT-47 | 단점, 안정성, 견고성 | 필수 | 1번 11쪽 | 준비됨 | 실시간 구독이 없어짐, 사용자 간 경계가 서버 코드의 책임이 됨, 인증과 호스팅을 생략함([evaluation.md](../decisions/evaluation.md) "한계로 적을 것", [db-privileges.md](../decisions/db-privileges.md) "한계") |
 
 ## Evaluation

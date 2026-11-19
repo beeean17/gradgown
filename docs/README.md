@@ -9,6 +9,7 @@
 | [requirements/](./requirements/) | [과제 요구사항](./requirements/course-requirements.md)과 [보고서 요구사항·충족 현황](./requirements/report-requirements.md) |
 | [decisions/](./decisions/) | 결정 기록. 결정 하나에 문서 하나 |
 | [contracts/](./contracts/) | 웹과 서버 사이의 계약. [web-api.md](./contracts/web-api.md)는 초안이다 |
+| [report/](./report/) | 보고서. [개요](./report/outline.md)가 초안으로 있다. 본문은 아직 없다 |
 | [testing/](./testing/) | 테스트 계획. [개요](./testing/README.md), [정적 계열](./testing/static.md), [동적 계열](./testing/dynamic.md). 스키마·권한 테스트의 도구만 확정이고 나머지는 제안이다 |
 
 ## 구현 현황 (2026-11-18)
@@ -60,13 +61,14 @@ DB, 서버 둘, 웹 둘을 만들었다. 실행 방법은 저장소 루트의 [R
 | 시드 데이터의 날짜는 고정한다 | 확정 | [mysql-docker.md](./decisions/mysql-docker.md) |
 | 평가는 DB 수준 비교를 중심으로 한다 | 제안 | [evaluation.md](./decisions/evaluation.md) |
 | 조회 구조 넷과 프론트 번들을 측정한다. 실제 규모와 100배 규모에서, Firebase 쪽은 로컬 에뮬레이터로 잰다 | 확정 | [evaluation.md](./decisions/evaluation.md) |
+| 보고서는 영어로, 본문 6쪽과 부록으로 쓰고, 기능 흐름은 학위복 대여를 자세히 쓴다 | 확정 (섹션 구성은 초안) | [report/outline.md](./report/outline.md) |
 
 ## 아직 정하지 않은 것
 
 | 항목 | 어디에 영향을 주나 |
 |---|---|
 | 개발용 DB의 데이터를 남길지, 이미지 태그를 패치 버전까지 고정할지 | [mysql-docker.md](./decisions/mysql-docker.md) |
-| 보고서의 분량 기준·언어, 개요, ER 다이어그램, 참고 문헌 | [requirements/report-requirements.md](./requirements/report-requirements.md) |
+| 보고서의 섹션별 쪽 배분과 실을 그림·표, 쓰는 도구와 양식, ER 다이어그램과 구조 그림, 참고 문헌 | [report/outline.md](./report/outline.md) |
 | Spring Boot 버전 | [tech-stack.md](./decisions/tech-stack.md) |
 | API의 경로 이름과 응답 모양, 관리자 앱을 가져올 범위 | [contracts/web-api.md](./contracts/web-api.md) |
 | 두 서버의 포트 | [admin-server-split.md](./decisions/admin-server-split.md) |
