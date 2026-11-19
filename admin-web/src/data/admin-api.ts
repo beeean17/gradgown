@@ -35,7 +35,7 @@ export function createAdminApi(sessionLost: () => void): AdminApi {
       if (kind === 'faq') return (await request<Faq[]>('GET', '/api/admin/faqs')).map(({ id, question, answer, category, tags, order, isVisible }) => ({ id, title: question, content: answer, category, isVisible, isPinned: false, isPopup: false, showOnHome: false, tags, order }))
       return (await request<Announcement[]>('GET', '/api/admin/announcements')).map(({ id, title, content, category, isVisible, isPinned, isPopup, showOnHome }) => ({ id, title, content, category, isVisible, isPinned, isPopup, showOnHome, tags: [], order: 0 }))
     },
-    listAudit: ({ domain, outcome, cursor }) => request('GET', `/api/admin/audit-logs${query({ domain: filter(domain), outcome: filter(outcome), cursor })}`),
+    listAudit: ({ domain, outcome, operationId, cursor }) => request('GET', `/api/admin/audit-logs${query({ domain: filter(domain), outcome: filter(outcome), operationId: operationId || null, cursor })}`),
   }
   // The server keeps sessions in memory: after a restart every request is 401 and the app
   // goes back to the login screen. A 403 is not that: it is MySQL refusing an admin's write.

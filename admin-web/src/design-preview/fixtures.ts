@@ -53,6 +53,6 @@ export function previewApi(scenario: string): AdminApi {
       event.isOpen = isOpen
     }),
     getContent: kind => respond(empty ? [] : content[kind]),
-    listAudit: ({ domain, outcome, cursor }) => respond(pageOf(empty ? [] : audit.filter(log => (domain === 'all' || log.domain === domain) && (outcome === 'all' || log.outcome === outcome)), cursor, log => log.operationId)),
+    listAudit: ({ domain, outcome, operationId, cursor }) => respond(pageOf(empty ? [] : audit.filter(log => (domain === 'all' || log.domain === domain) && (outcome === 'all' || log.outcome === outcome) && (!operationId || log.operationId === operationId)), cursor, log => log.operationId)),
   }
 }

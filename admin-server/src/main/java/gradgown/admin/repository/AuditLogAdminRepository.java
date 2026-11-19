@@ -38,11 +38,22 @@ public class AuditLogAdminRepository {
    * (docs/decisions/evaluation.md, A5).
    *
    * <p>Paging is by key on (created_at, operation_id): two rows can share a millisecond, and the
-   * operation ID breaks the tie. The row comparison reads "comes after the last row of the
-   * previous page in this ordering".
+   * operation ID breaks the tie. The cursor condition is written out as "earlier, or the same
+   * instant and a smaller ID" on purpose. The row comparison {@code (created_at, operation_id) <
+   * (?, ?)} means the same, but MySQL does not turn it into an index range: every page then
+   * scanned the index again from the newest row, and page 10 read ten pages' worth
+   * (eval/results).
+   *
+   * @param operationId an exact operation ID, the one an error message shows to a student, or
+   *     null. A lookup by primary key.
    */
   public Page<AuditLogRow> find(
-      String domain, String outcome, LocalDateTime cursorTime, String cursorId, int size) {
+      String domain,
+      String outcome,
+      String operationId,
+      LocalDateTime cursorTime,
+      String cursorId,
+      int size) {
     List<Fetched> rows =
         jdbc.sql(
                 """
@@ -53,13 +64,16 @@ public class AuditLogAdminRepository {
                 JOIN users AS u ON u.id = a.actor_id
                 WHERE (:domain IS NULL OR a.domain = :domain)
                   AND (:outcome IS NULL OR a.outcome = :outcome)
+                  AND (:operationId IS NULL OR a.operation_id = :operationId)
                   AND (:cursorTime IS NULL
-                       OR (a.created_at, a.operation_id) < (:cursorTime, :cursorId))
+                       OR a.created_at < :cursorTime
+                       OR (a.created_at = :cursorTime AND a.operation_id < :cursorId))
                 ORDER BY a.created_at DESC, a.operation_id DESC
                 LIMIT :limit
                 """)
             .param("domain", domain)
             .param("outcome", outcome)
+            .param("operationId", operationId)
             .param("cursorTime", cursorTime)
             .param("cursorId", cursorId)
             .param("limit", size + 1)

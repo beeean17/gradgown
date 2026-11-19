@@ -5,11 +5,13 @@ import { Grid } from '@astryxdesign/core/Grid'
 import { Icon } from '@astryxdesign/core/Icon'
 import { List, ListItem } from '@astryxdesign/core/List'
 import { Selector } from '@astryxdesign/core/Selector'
+import { TextInput } from '@astryxdesign/core/TextInput'
 import { StatusDot } from '@astryxdesign/core/StatusDot'
 import { useNavigate } from 'react-router-dom'
 import type { AdminApi, AuditQuery, AuditRow } from '../contracts/admin-view.ts'
 import { useLoad } from '../hooks/useLoad.ts'
 import { useCursor } from '../hooks/useCursor.ts'
+import { useDebounced } from '../hooks/useDebounced.ts'
 import { displayDate } from '../data/format.ts'
 import { VStack, HStack, Heading, Text, Button, PageHeader, Loaded, Empty, Message, Token, Pager } from '../shared/ui.tsx'
 import { useCan } from '../auth/access.ts'
@@ -55,18 +57,20 @@ function auditStatus(log: AuditRow) {
   const pending = Number.isFinite(Date.parse(log.createdAt)) && Date.now() - Date.parse(log.createdAt) < 120000
   return { variant: pending ? 'accent' as const : 'warning' as const, label: pending ? '처리 중' : '결과 불명', pending }
 }
-// The server filters by 업무 and 처리 결과 and pages by cursor, over the whole log; the original
+// The server filters by 업무, 처리 결과 and an exact 요청 ID and pages by cursor, over the whole log; the original
 // read the latest 200 documents and searched them in the browser (docs/decisions/evaluation.md, A5).
 export function LogsPage({ api }: { api: AdminApi }) {
   const [domain, setDomain] = useState<AuditQuery['domain']>('all'), [outcome, setOutcome] = useState<AuditQuery['outcome']>('all')
-  const { cursor, page, first, next } = useCursor(JSON.stringify([domain, outcome]))
-  const { state, refresh } = useLoad(useCallback(() => api.listAudit({ domain, outcome, cursor }), [api, domain, outcome, cursor]))
+  const [idInput, setIdInput] = useState('')
+  const operationId = useDebounced(idInput.trim())
+  const { cursor, page, first, next } = useCursor(JSON.stringify([domain, outcome, operationId]))
+  const { state, refresh } = useLoad(useCallback(() => api.listAudit({ domain, outcome, operationId, cursor }), [api, domain, outcome, operationId, cursor]))
   return <VStack gap={6}><PageHeader title="감사 로그" description="학생의 예약·St:talk 신청 요청과 그 결과를 사용자와 요청 추적 ID로 확인합니다." />
     <Message>학생용 서버가 받은 요청을 한 작업당 한 건으로 기록합니다. 접수 열기·닫기는 기록하지 않습니다.</Message>
-    <HStack gap={3} align="end" wrap="wrap"><Selector label="업무" value={domain} onChange={value => setDomain(value as AuditQuery['domain'])} options={[{ value: 'all', label: '전체 업무' }, { value: 'reservation', label: '학위복 예약' }, { value: 'mentoring', label: 'St:talk' }]} /><Selector label="처리 결과" value={outcome} onChange={value => setOutcome(value as AuditQuery['outcome'])} options={[{ value: 'all', label: '전체 결과' }, { value: 'rejected', label: '요청 거부' }, { value: 'failed', label: '서버 실패' }, { value: 'received', label: '처리 중/결과 불명' }, { value: 'succeeded', label: '성공' }]} /><Button label="감사 로그 새로고침" onClick={refresh} /></HStack>
-    <Text type="supporting">페이지당 최대 50건 · 업무와 처리 결과 필터는 전체 로그에 적용 · 개인정보 입력값은 저장하지 않고 사용자·대상 ID·오류 분류만 기록</Text>
+    <HStack gap={3} align="end" wrap="wrap"><TextInput label="요청 ID" value={idInput} onChange={setIdInput} placeholder="오류 메시지에 나온 요청 ID 전체" hasClear /><Selector label="업무" value={domain} onChange={value => setDomain(value as AuditQuery['domain'])} options={[{ value: 'all', label: '전체 업무' }, { value: 'reservation', label: '학위복 예약' }, { value: 'mentoring', label: 'St:talk' }]} /><Selector label="처리 결과" value={outcome} onChange={value => setOutcome(value as AuditQuery['outcome'])} options={[{ value: 'all', label: '전체 결과' }, { value: 'rejected', label: '요청 거부' }, { value: 'failed', label: '서버 실패' }, { value: 'received', label: '처리 중/결과 불명' }, { value: 'succeeded', label: '성공' }]} /><Button label="감사 로그 새로고침" onClick={refresh} /></HStack>
+    <Text type="supporting">페이지당 최대 50건 · 요청 ID는 전체가 같아야 찾음 · 업무와 처리 결과 필터는 전체 로그에 적용 · 개인정보 입력값은 저장하지 않고 사용자·대상 ID·오류 분류만 기록</Text>
     <Loaded state={state} retry={refresh}>{data => <VStack gap={3}>
-      {!data.items.length ? <Empty detail={domain !== 'all' || outcome !== 'all' ? '필터를 바꿔 보세요.' : '기록된 작업이 아직 없습니다.'} /> : <List hasDividers header={<Text type="supporting">현재 페이지 {data.items.length}건</Text>}>{data.items.map(log => {
+      {!data.items.length ? <Empty detail={domain !== 'all' || outcome !== 'all' || operationId ? '요청 ID나 필터를 바꿔 보세요.' : '기록된 작업이 아직 없습니다.'} /> : <List hasDividers header={<Text type="supporting">현재 페이지 {data.items.length}건</Text>}>{data.items.map(log => {
         const status = auditStatus(log)
         return <ListItem key={log.operationId} label={`${actionLabels[log.action] || log.action} · ${status.label}`} startContent={<StatusDot variant={status.variant} label={status.label} isPulsing={'pending' in status && status.pending === true} />} description={<VStack gap={2}>
           {(log.failureKind || log.errorCode) && <HStack gap={2} wrap="wrap">{log.failureKind && <Token label={failureKindLabels[log.failureKind] || log.failureKind} color={log.outcome === 'failed' ? 'red' : 'orange'} size="sm" />}{log.errorCode && <Token label={log.errorCode} color="gray" size="sm" />}</HStack>}

@@ -216,7 +216,7 @@ public class MentoringAdminRepository {
    * registration of the event into the browser and counted there (docs/decisions/evaluation.md).
    *
    * <p>The inner query turns each registration into two rows, one per session, so that both
-   * sessions can be counted by option in a single pass. Always returns eight rows: options 1 to 7
+   * sessions can be counted by option with one GROUP BY (the table is read twice, once per session). Always returns eight rows: options 1 to 7
    * and then 0, "no choice".
    */
   public List<OptionCount> countByOption(String eventId) {

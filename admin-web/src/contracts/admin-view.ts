@@ -117,7 +117,8 @@ export type AuditRow = {
   createdAt: string
   completedAt: string
 }
-export type AuditQuery = { domain: 'all' | AuditDomain; outcome: 'all' | AuditOutcome; cursor: string | null }
+/** `operationId` is an exact request ID, the one an error message shows to a student; '' for none. */
+export type AuditQuery = { domain: 'all' | AuditDomain; outcome: 'all' | AuditOutcome; operationId: string; cursor: string | null }
 export type AuditPage = { items: AuditRow[]; nextCursor: string | null }
 
 export type LoadState<T> = { status: 'loading' } | { status: 'ready'; data: T } | { status: 'error'; message: string }

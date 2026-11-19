@@ -339,6 +339,18 @@ class AdminReadTest extends AdminServerTest {
     assertEquals(
         List.of("audit-test-operation-5"),
         read(admin.get("/api/admin/audit-logs?outcome=rejected"), "$.items[*].operationId"));
+    // The ID an error message shows to a student finds its row directly, however old it is.
+    assertEquals(
+        List.of("audit-test-operation-1"),
+        read(
+            admin.get("/api/admin/audit-logs?operationId=audit-test-operation-1&limit=1"),
+            "$.items[*].operationId"));
+    assertEquals(
+        List.of(),
+        read(admin.get("/api/admin/audit-logs?operationId=no-such-operation-0000"), "$.items[*].operationId"));
+    assertEquals(
+        List.of(),
+        read(admin.get("/api/admin/audit-logs?operationId=%ED%95%9C%EA%B8%80"), "$.items[*].operationId"));
 
     List<String> seen = new ArrayList<>();
     String cursor = null;

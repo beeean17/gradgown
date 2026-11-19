@@ -45,8 +45,14 @@ public class ContentAdminController {
   public Page<AuditLogRow> auditLogs(
       @RequestParam(required = false) String domain,
       @RequestParam(required = false) String outcome,
+      @RequestParam(required = false) String operationId,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit) {
+    String exactId = Page.filter(operationId);
+    if (exactId != null && !CURSOR_ID.matcher(exactId).matches()) {
+      // No operation ID has other characters, and the column would refuse to compare them.
+      return new Page<>(List.of(), null);
+    }
     LocalDateTime cursorTime = null;
     String cursorId = null;
     if (cursor != null && !cursor.isBlank()) {
@@ -67,6 +73,6 @@ public class ContentAdminController {
       }
     }
     return auditLogs.find(
-        Page.filter(domain), Page.filter(outcome), cursorTime, cursorId, Page.size(limit));
+        Page.filter(domain), Page.filter(outcome), exactId, cursorTime, cursorId, Page.size(limit));
   }
 }
