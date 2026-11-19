@@ -80,7 +80,7 @@ public final class Measure {
       GROUP BY choice.option_no
       """;
 
-  /** admin-server AuditLogAdminRepository.find, first page. */
+  /** admin-server AuditLogAdminRepository.find. */
   private static final String AUDIT_LIST =
       """
       SELECT a.operation_id, a.domain, a.action, a.actor_id, u.email AS actor_email,
@@ -90,9 +90,22 @@ public final class Measure {
       JOIN users AS u ON u.id = a.actor_id
       WHERE (? IS NULL OR a.domain = ?)
         AND (? IS NULL OR a.outcome = ?)
+        AND (? IS NULL OR a.operation_id = ?)
+        AND (? IS NULL
+             OR a.created_at < ?
+             OR (a.created_at = ? AND a.operation_id < ?))
       ORDER BY a.created_at DESC, a.operation_id DESC
       LIMIT ?
       """;
+
+  /** The arguments of {@link #AUDIT_LIST} for one page. */
+  private static Object[] auditArgs(
+      String outcome, String operationId, java.time.LocalDateTime cursorTime, String cursorId) {
+    return new Object[] {
+      null, null, outcome, outcome, operationId, operationId,
+      cursorTime, cursorTime, cursorTime, cursorId, PAGE + 1
+    };
+  }
 
   /** student-server AnnouncementRepository.findAll. */
   private static final String VISIBLE_ANNOUNCEMENTS =
@@ -103,7 +116,11 @@ public final class Measure {
       ORDER BY is_pinned DESC, created_at DESC, id DESC
       """;
 
-  private static final String AUDIT_INDEX = "ix_audit_logs_created";
+  /** In the schema: serves the newest-first order. */
+  private static final String INDEX_BY_TIME = "ix_audit_logs_created";
+
+  /** In the schema: serves the newest-first order within one outcome. */
+  private static final String INDEX_BY_OUTCOME = "ix_audit_logs_outcome";
 
   // --- Results -------------------------------------------------------------------
 
@@ -187,12 +204,14 @@ public final class Measure {
 
   private void findOnePerson(Dataset data, Firestore firestore, Connection db) throws SQLException {
     String target = Dataset.TARGET_NAME;
+    int position = data.reservations.size() - data.reservations.indexOf(data.searchTarget);
 
-    // The original filters inside the page the browser holds. Page 1 first, then "다음" until
-    // the page that has the person.
+    // The original applies the search box to the page the browser holds (the box is labelled
+    // "현재 페이지 검색"). Page 1 first, then "다음 페이지" until the page that has the person.
     long requests = 0;
     long docs = 0;
     long bytes = 0;
+    long firstPageBytes = 0;
     boolean foundOnFirstPage = false;
     boolean found = false;
     JsonNode cursor = null;
@@ -205,6 +224,7 @@ public final class Measure {
       found = shown.stream().anyMatch(doc -> doc.get("fields").get("name").get("stringValue").asString().equals(target));
       if (requests == 1) {
         foundOnFirstPage = found;
+        firstPageBytes = page.bytes();
       }
       if (page.documents() <= PAGE) {
         break;
@@ -219,12 +239,12 @@ public final class Measure {
 
     table(
         "2. 회차에서 한 사람 찾기",
-        "찾는 사람은 회차의 예약을 최신순으로 늘어놓았을 때 한가운데(" + fmt(data.scale.reservations() / 2 + 1)
-            + "번째)에 있다. 원본은 검색어를 브라우저가 가진 페이지 안에서만 적용한다.",
-        new Line("Firestore", "첫 페이지에서 검색", 1, "51 문서", foundOnFirstPage ? 1 : 0, 0,
-            foundOnFirstPage ? "찾음" : "**못 찾음.** 화면은 \"결과 없음\"을 보인다"),
-        new Line("Firestore", "찾을 때까지 \"다음 페이지\"", requests, fmt(docs) + " 문서", found ? 1 : 0, bytes,
-            found ? "찾음. 어느 페이지에 있는지 알 방법은 없다" : "못 찾음"),
+        "찾는 사람은 회차의 예약을 최신순으로 늘어놓았을 때 한가운데(" + fmt(position)
+            + "번째)에 있다. 원본의 검색 상자는 브라우저가 받은 페이지 안에서만 찾고, 화면에도 \"현재 페이지 검색\"이라고 적혀 있다.",
+        new Line("Firestore", "첫 페이지에서 검색", 1, "51 문서", 51, firstPageBytes,
+            foundOnFirstPage ? "찾음" : "**못 찾음.** 받은 51건 안에 없다. 화면은 \"표시할 항목이 없습니다\"를 보인다"),
+        new Line("Firestore", "찾을 때까지 \"다음 페이지\"", requests, fmt(docs) + " 문서", docs, bytes,
+            found ? "찾음. 몇 번째 페이지에 있는지는 미리 알 수 없다" : "못 찾음"),
         new Line("MySQL", "`WHERE … name LIKE ? OR student_id LIKE ? OR phone LIKE ?`", 1,
             fmt(sql.rowsRead()) + " 행", sql.rows(), sql.bytes(), "찾음. " + ms(sql)));
   }
@@ -266,15 +286,19 @@ public final class Measure {
       }
     }
 
+    // Above 1,000 the original does not count at all: listMentoring throws ("이 행사의 신청이
+    // 1000건을 넘어 한 번에 읽지 않았습니다") and the screen shows that error.
+    String originalResult =
+        all.documents() > 1_000
+            ? "**오류.** 1,000건을 넘으면 읽기를 거부하고 오류를 보인다. 집계도 명단도 볼 수 없다"
+            : Arrays.deepEquals(truth, counted) ? "맞음" : "**틀림**";
+
     table(
         "3. St:talk 신청 인원 집계",
         "선택지(1~7과 선택 안함) × 차시의 신청 완료 인원 16칸을 구한다. 실제 인원의 합은 차시마다 "
             + fmt(Arrays.stream(truth[0]).sum()) + "명이다.",
         new Line("Firestore", "행사의 신청을 모두 읽어 브라우저에서 센다 (`limit(1001)`)", 1,
-            fmt(all.documents()) + " 문서", all.documents(), all.bytes(),
-            Arrays.deepEquals(truth, counted)
-                ? "맞음"
-                : "**틀림.** 1,000건까지만 읽어서 " + fmt(Arrays.stream(counted[0]).sum()) + "명으로 센다"),
+            fmt(all.documents()) + " 문서", all.documents(), all.bytes(), originalResult),
         new Line("MySQL", "`GROUP BY` 한 번", 1, fmt(sql.rowsRead()) + " 행", sql.rows(), sql.bytes(),
             (Arrays.deepEquals(truth, grouped) ? "맞음. " : "**틀림.** ") + ms(sql)));
   }
@@ -283,38 +307,94 @@ public final class Measure {
 
   private void auditLog(Dataset data, Firestore firestore, Connection db) throws SQLException {
     String wanted = data.oldRejected.operationId();
+    long newerRejected =
+        data.auditLogs.stream()
+            .filter(a -> a.outcome().equals("rejected") && a.createdAt().isAfter(data.oldRejected.createdAt()))
+            .count();
 
-    // The original reads the newest 200 and searches them in the browser.
+    // The original reads the newest 200 and searches them in the browser; the screen says
+    // "최근 200건 안에서 검색·필터".
     Read newest = firestore.query("adminAuditLogs", false, null, null, 200, null);
     boolean inNewest =
         newest.docs().stream()
             .anyMatch(doc -> doc.get("fields").get("operationId").get("stringValue").asString().equals(wanted));
 
-    execute(db, "ALTER TABLE audit_logs DROP INDEX " + AUDIT_INDEX, true);
-    SqlRun without =
-        sql(db, "거부된 요청의 첫 페이지 (보조 인덱스 없음)", AUDIT_LIST, null, null, "rejected", "rejected", PAGE + 1);
-    execute(db, "ALTER TABLE audit_logs ADD INDEX " + AUDIT_INDEX + " (created_at, operation_id)", false);
+    execute(db, "ALTER TABLE audit_logs DROP INDEX " + INDEX_BY_TIME, true);
+    execute(db, "ALTER TABLE audit_logs DROP INDEX " + INDEX_BY_OUTCOME, true);
     execute(db, "ANALYZE TABLE audit_logs", false);
-    SqlRun with =
-        sql(db, "거부된 요청의 첫 페이지 (인덱스 있음)", AUDIT_LIST, null, null, "rejected", "rejected", PAGE + 1);
+    SqlRun byId = sql(db, "요청 ID로 한 건 찾기", AUDIT_LIST, auditArgs(null, wanted, null, null));
+    SqlRun bare = sql(db, "거부된 요청의 첫 페이지 (보조 인덱스 없음)", AUDIT_LIST, auditArgs("rejected", null, null, null));
 
-    // Reaching the wanted row: pages of rejected rows until it appears.
-    long rejectedNewer =
-        data.auditLogs.stream()
-            .filter(a -> a.outcome().equals("rejected") && a.createdAt().isAfter(data.oldRejected.createdAt()))
-            .count();
+    execute(db, "ALTER TABLE audit_logs ADD INDEX " + INDEX_BY_TIME + " (created_at, operation_id)", false);
+    execute(db, "ANALYZE TABLE audit_logs", false);
+    SqlRun byTime = sql(db, "거부된 요청의 첫 페이지 (시각 인덱스)", AUDIT_LIST, auditArgs("rejected", null, null, null));
+    SqlRun rareByTime = sql(db, "한 건도 없는 결과의 첫 페이지 (시각 인덱스)", AUDIT_LIST, auditArgs("failed", null, null, null));
+    Walk walkByTime = walkTo(db, wanted);
+
+    execute(db, "ALTER TABLE audit_logs ADD INDEX " + INDEX_BY_OUTCOME + " (outcome, created_at, operation_id)", false);
+    execute(db, "ANALYZE TABLE audit_logs", false);
+    SqlRun byOutcome = sql(db, "거부된 요청의 첫 페이지 (결과별 인덱스 추가)", AUDIT_LIST, auditArgs("rejected", null, null, null));
+    SqlRun rareByOutcome = sql(db, "한 건도 없는 결과의 첫 페이지 (결과별 인덱스 추가)", AUDIT_LIST, auditArgs("failed", null, null, null));
+    Walk walkByOutcome = walkTo(db, wanted);
 
     table(
-        "4. 감사 로그에서 거부된 요청 보기",
-        "전체 " + fmt(data.scale.auditLogs()) + "건 가운데 5분의 1이 거부된 요청이다. 찾는 것은 그중 오래된 한 건이고, 그보다 새 거부 건이 "
-            + fmt(rejectedNewer) + "건 있다.",
-        new Line("Firestore", "최신 200건을 읽어 브라우저에서 거른다", 1, fmt(newest.documents()) + " 문서",
+        "4. 감사 로그에서 오래된 거부 요청 찾기",
+        "전체 " + fmt(data.scale.auditLogs()) + "건 가운데 5분의 1이 거부된 요청이고, 실패(`failed`)는 한 건도 없다. 찾는 것은 오래된 거부 한 건이고, 그보다 새 거부 건이 "
+            + fmt(newerRejected) + "건 있다. 시각 인덱스는 `(created_at, operation_id)`, 결과별 인덱스는 `(outcome, created_at, operation_id)`다.",
+        new Line("Firestore", "최신 200건을 읽어 브라우저에서 찾는다", 1, fmt(newest.documents()) + " 문서",
             newest.documents(), newest.bytes(),
-            inNewest ? "찾음" : "**못 찾음.** 200건 밖의 기록은 화면에서 볼 방법이 없다"),
-        new Line("MySQL", "`WHERE outcome = ?` 첫 페이지, 보조 인덱스 없음", 1, fmt(without.rowsRead()) + " 행",
-            without.rows(), without.bytes(), ms(without)),
-        new Line("MySQL", "같은 문장, `(created_at, operation_id)` 인덱스", 1, fmt(with.rowsRead()) + " 행",
-            with.rows(), with.bytes(), ms(with) + ". 페이지를 넘기면 찾는 건에 닿는다"));
+            inNewest ? "찾음" : "**못 찾음.** 200건 밖이다. 화면은 \"최근 200건 안에서 검색\"이라고 밝힌다"),
+        new Line("MySQL", "요청 ID로 찾기 (`operation_id = ?`, PK)", 1, fmt(byId.rowsRead()) + " 행",
+            byId.rows(), byId.bytes(), "찾음. " + ms(byId)),
+        new Line("MySQL", "거부된 요청의 첫 페이지, 보조 인덱스 없음", 1, fmt(bare.rowsRead()) + " 행",
+            bare.rows(), bare.bytes(), ms(bare)),
+        new Line("MySQL", "같은 문장, 시각 인덱스", 1, fmt(byTime.rowsRead()) + " 행",
+            byTime.rows(), byTime.bytes(), ms(byTime)),
+        new Line("MySQL", "같은 문장, 결과별 인덱스 추가", 1, fmt(byOutcome.rowsRead()) + " 행",
+            byOutcome.rows(), byOutcome.bytes(), ms(byOutcome)),
+        new Line("MySQL", "거부된 요청을 페이지로 넘겨 찾는 건까지, 시각 인덱스", walkByTime.requests(),
+            fmt(walkByTime.rowsRead()) + " 행", walkByTime.rows(), 0, walkByTime.found() ? "찾음" : "못 찾음"),
+        new Line("MySQL", "같은 넘김, 결과별 인덱스 추가", walkByOutcome.requests(),
+            fmt(walkByOutcome.rowsRead()) + " 행", walkByOutcome.rows(), 0, walkByOutcome.found() ? "찾음" : "못 찾음"),
+        new Line("MySQL", "한 건도 없는 결과(`failed`)의 첫 페이지, 시각 인덱스", 1,
+            fmt(rareByTime.rowsRead()) + " 행", rareByTime.rows(), 0, ms(rareByTime)),
+        new Line("MySQL", "같은 문장, 결과별 인덱스 추가", 1, fmt(rareByOutcome.rowsRead()) + " 행",
+            rareByOutcome.rows(), 0, ms(rareByOutcome)));
+  }
+
+  /** What paging through the rejected commands, newest first, cost until one of them appeared. */
+  private record Walk(long requests, long rowsRead, long rows, boolean found) {}
+
+  private static Walk walkTo(Connection db, String wantedOperationId) throws SQLException {
+    long requests = 0;
+    long rowsRead = 0;
+    long rows = 0;
+    java.time.LocalDateTime cursorTime = null;
+    String cursorId = null;
+    while (true) {
+      execute(db, "FLUSH STATUS", false);
+      List<String> ids = new ArrayList<>();
+      List<java.time.LocalDateTime> times = new ArrayList<>();
+      try (PreparedStatement statement = prepare(db, AUDIT_LIST, auditArgs("rejected", null, cursorTime, cursorId));
+          ResultSet result = statement.executeQuery()) {
+        while (result.next()) {
+          ids.add(result.getString("operation_id"));
+          times.add(result.getObject("created_at", java.time.LocalDateTime.class));
+        }
+      }
+      requests++;
+      rowsRead += handlerReads(db);
+      int shown = Math.min(PAGE, ids.size());
+      rows += shown;
+      if (ids.subList(0, shown).contains(wantedOperationId)) {
+        return new Walk(requests, rowsRead, rows, true);
+      }
+      if (ids.size() <= PAGE) {
+        return new Walk(requests, rowsRead, rows, false);
+      }
+      cursorTime = times.get(shown - 1);
+      cursorId = ids.get(shown - 1);
+    }
   }
 
   // --- 5. Announcements a student is sent (A4) --------------------------------------------
@@ -356,6 +436,13 @@ public final class Measure {
    * and the plan.
    */
   private SqlRun sql(Connection db, String title, String statementText, Object... args) throws SQLException {
+    // Once before counting, so that one-off data dictionary reads are not charged to the query.
+    try (PreparedStatement statement = prepare(db, statementText, args);
+        ResultSet result = statement.executeQuery()) {
+      while (result.next()) {
+        // discard
+      }
+    }
     execute(db, "FLUSH STATUS", false);
     List<Map<String, Object>> rows = new ArrayList<>();
     try (PreparedStatement statement = prepare(db, statementText, args);
@@ -370,13 +457,7 @@ public final class Measure {
         rows.add(row);
       }
     }
-    long rowsRead = 0;
-    try (Statement statement = db.createStatement();
-        ResultSet status = statement.executeQuery("SHOW SESSION STATUS LIKE 'Handler_read%'")) {
-      while (status.next()) {
-        rowsRead += status.getLong(2);
-      }
-    }
+    long rowsRead = handlerReads(db);
 
     double[] times = new double[15];
     for (int i = 0; i < times.length; i++) {
@@ -402,6 +483,18 @@ public final class Measure {
 
     long bytes = JSON.writeValueAsString(rows).getBytes(StandardCharsets.UTF_8).length;
     return new SqlRun(rows.size(), rowsRead, bytes, times[times.length / 2], plan.toString());
+  }
+
+  /** Rows the storage engine read since the last FLUSH STATUS, internal temporary tables included. */
+  private static long handlerReads(Connection db) throws SQLException {
+    long rowsRead = 0;
+    try (Statement statement = db.createStatement();
+        ResultSet status = statement.executeQuery("SHOW SESSION STATUS LIKE 'Handler_read%'")) {
+      while (status.next()) {
+        rowsRead += status.getLong(2);
+      }
+    }
+    return rowsRead;
   }
 
   private static PreparedStatement prepare(Connection db, String sql, Object... args) throws SQLException {

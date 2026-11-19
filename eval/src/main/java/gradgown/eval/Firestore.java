@@ -41,7 +41,7 @@ final class Firestore {
 
   Firestore(String emulatorHost) {
     String host = emulatorHost == null ? "" : emulatorHost.strip();
-    if (!host.startsWith("127.0.0.1:") && !host.startsWith("localhost:")) {
+    if (!host.matches("(127\\.0\\.0\\.1|localhost):\\d{1,5}")) {
       throw new IllegalStateException(
           "FIRESTORE_EMULATOR_HOST must be a local emulator such as 127.0.0.1:8790, but is '"
               + host
