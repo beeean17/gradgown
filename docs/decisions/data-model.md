@@ -120,7 +120,7 @@ Firestore의 문서, 하위 컬렉션, 중첩 map을 **테이블 11개**로 정�
 | 신청의 이메일 | `mentoring_registrations`에 컬럼을 두지 않는다. 명단을 만들 때 `users`와 조인한다 | 원본은 서버가 로그인 계정의 이메일을 신청마다 복사했다. 그 값은 항상 `users.email`과 같으므로 같은 사실을 두 곳에 두지 않는다. 초안에는 컬럼이 있었다 |
 | `announcements.category` | 기본값은 `'일반'`이다 | 원본 웹이 분류가 없는 공지를 `일반`으로 보였다. 값은 화면에 그대로 나오므로 시드도 한글 분류를 쓴다 |
 | `announcements.show_on_home` | 추가했다 | 화면 타입 `Announcement.showOnHome`(원본의 `showOnToggle`)이 쓴다 |
-| 보조 인덱스 | 제약(PK, UNIQUE, FK)이 만드는 인덱스에 더해 `audit_logs (created_at, operation_id)` 하나가 있다 | 조회 쿼리를 쓰고 실행 계획을 본 뒤에 더하기로 했다. 측정에서 감사 로그 목록이 페이지마다 테이블 전체를 정렬하는 것이 보여 더했다(2026-11-19). 나머지 목록은 FK의 인덱스로 충분했다([evaluation.md](./evaluation.md)) |
+| 보조 인덱스 | 제약(PK, UNIQUE, FK)이 만드는 인덱스에 더해 `audit_logs`에 둘이 있다: `(created_at, operation_id)`와 `(outcome, created_at, operation_id)` | 조회 쿼리를 쓰고 실행 계획을 본 뒤에 더하기로 했다. 측정에서 감사 로그 목록이 페이지마다 테이블 전체를 정렬하는 것이 보여 첫째를, 드문 결과로 거르면 그 인덱스 전체를 읽는 것이 보여 둘째를 더했다(2026-11-19). 나머지 목록은 FK의 인덱스로 충분했다([evaluation.md](./evaluation.md)) |
 
 ### 남겨 둔 중복
 

@@ -179,7 +179,7 @@
 | `GET /api/admin/mentoring/counts?eventId=` | `[{ option, name, first, second }]` 8행 (선택지 1~7, 그리고 0 = 선택 안함) | 브라우저의 집계. 서버가 `GROUP BY` 한 번으로 센다. 취소 건은 세지 않는다 |
 | `GET /api/admin/announcements` | `Announcement[]`. 숨김 항목 포함 | `getContent('announcements')` |
 | `GET /api/admin/faqs` | FAQ 배열. 태그 포함 | `getContent('faq')` |
-| `GET /api/admin/audit-logs?domain=&outcome=&cursor=&limit=` | `{ items, nextCursor }` | `listAudit()`. 최근 200건 제한 없이 서버가 거르고 나눈다 |
+| `GET /api/admin/audit-logs?domain=&outcome=&operationId=&cursor=&limit=` | `{ items, nextCursor }` | `listAudit()`. 최근 200건 제한 없이 서버가 거르고 나눈다. `operationId`는 요청 ID 전체가 같은 한 건을 찾는다(오류 메시지에 나오는 값이다) |
 
 - **페이지 나누기.** `limit`은 기본 50, 최대 200이다. 응답의 `nextCursor`를 다음 요청의 `cursor`로 보낸다. 마지막 페이지에서는 `null`이다. 커서는 마지막 행의 키라서, 페이지를 넘기는 사이에 새 행이 생겨도 겹치거나 빠지지 않는다.
 - 예약과 신청의 행에는 신청자의 `userId`와 `email`이 함께 온다. 이메일은 `users`와 조인해서 읽는다.
